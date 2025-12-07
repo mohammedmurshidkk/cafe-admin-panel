@@ -1,0 +1,186 @@
+// Auth types
+export interface User {
+  id: string;
+  email: string;
+  business_id: string;
+  business_name: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: User;
+}
+
+// Dashboard types
+export interface DashboardStats {
+  ordersToday: number;
+  activeSessions: number;
+  pendingOrders: number;
+  revenueToday: number;
+}
+
+// Order types
+export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'completed' | 'cancelled';
+
+export interface OrderItem {
+  name: string;
+  quantity: number;
+  unit_price: number;
+}
+
+export interface Order {
+  id: string;
+  customer_phone: string;
+  items: OrderItem[];
+  total: number;
+  status: OrderStatus;
+  created_at: string;
+}
+
+export interface OrdersResponse {
+  orders: Order[];
+  pagination: Pagination;
+}
+
+// Session types
+export type SessionStatus = 'active' | 'completed';
+
+export interface Session {
+  id: string;
+  customer_phone: string;
+  status: SessionStatus;
+  ai_paused: boolean;
+  items_count: number;
+  last_message_at: string;
+  created_at: string;
+}
+
+export interface SessionMessage {
+  id: string;
+  direction: 'inbound' | 'outbound';
+  content: string;
+  created_at: string;
+}
+
+export interface SessionDetail {
+  session: Session & { items: OrderItem[] };
+  messages: SessionMessage[];
+}
+
+export interface SessionsResponse {
+  sessions: Session[];
+  pagination: Pagination;
+}
+
+// Menu types
+export interface MenuItemSize {
+  name: string;
+  price: number;
+}
+
+export interface MenuItem {
+  id: string;
+  name: string;
+  description: string;
+  category_id: string;
+  category_name: string;
+  base_price: number;
+  sizes: MenuItemSize[];
+  image_url: string | null;
+  is_customizable: boolean;
+  requires_date: boolean;
+  is_available: boolean;
+  special_notes?: string;
+}
+
+export interface MenuItemFormData {
+  name: string;
+  description: string;
+  category_id: string;
+  base_price: number;
+  sizes: MenuItemSize[];
+  is_customizable: boolean;
+  requires_date: boolean;
+  is_available: boolean;
+  special_notes?: string;
+}
+
+export interface MenuResponse {
+  items: MenuItem[];
+}
+
+// Category types
+export interface Category {
+  id: string;
+  name: string;
+  sort_order: number;
+  items_count: number;
+}
+
+export interface CategoriesResponse {
+  categories: Category[];
+}
+
+// Addon types
+export interface Addon {
+  id: string;
+  name: string;
+  price: number;
+  is_available: boolean;
+}
+
+export interface AddonGroup {
+  id: string;
+  name: string;
+  addons: Addon[];
+}
+
+export interface AddonGroupsResponse {
+  groups: AddonGroup[];
+}
+
+// Business types
+export interface Outlet {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  is_active: boolean;
+}
+
+export interface Business {
+  id: string;
+  name: string;
+  phone_number: string;
+  logo_url: string | null;
+  welcome_message: string;
+  thank_you_message: string;
+  custom_ai_prompt: string;
+  critical_message: string;
+  critical_message_enabled: boolean;
+  outlets: Outlet[];
+}
+
+export interface BusinessResponse {
+  business: Business;
+}
+
+// Common types
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+}
+
+export interface SuccessResponse {
+  success: boolean;
+}
+
+export interface ErrorResponse {
+  error: string;
+}
