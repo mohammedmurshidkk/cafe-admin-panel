@@ -96,6 +96,7 @@ export interface MenuItem {
   requires_date: boolean;
   is_available: boolean;
   special_notes?: string;
+  price?: number
 }
 
 export interface MenuItemFormData {

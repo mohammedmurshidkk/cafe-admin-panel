@@ -95,7 +95,7 @@ const Dashboard = () => {
             </div>
           ) : ordersData?.orders?.length ? (
             <div className="space-y-3">
-              {ordersData.orders.map((order) => (
+              {ordersData?.orders.map((order) => (
                 <div 
                   key={order.id}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
@@ -150,7 +150,7 @@ const Dashboard = () => {
                       <MessageSquare className="h-4 w-4 text-secondary" />
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{formatPhone(session.customer_phone)}</p>
+                      <p className="font-medium text-sm">{formatPhone(session?.customer_phone)}</p>
                       <p className="text-xs text-muted-foreground">{session.items_count} items in cart</p>
                     </div>
                   </div>

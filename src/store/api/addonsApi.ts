@@ -4,7 +4,7 @@ import { AddonGroup, AddonGroupsResponse, Addon } from '@/types';
 export const addonsApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAddonGroups: builder.query<AddonGroupsResponse, void>({
-      query: () => '/addon-groups',
+      query: () => '/addons/groups',
       providesTags: ['Addons'],
     }),
     createAddonGroup: builder.mutation<{ group: AddonGroup }, { name: string }>({
@@ -30,7 +30,7 @@ export const addonsApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Addons'],
     }),
-    updateAddon: builder.mutation<{ addon: Addon }, { id: string; name?: string; price?: number; is_available?: boolean }>({
+    updateAddon: builder.mutation<{ addon: Addon }, { id: string; name?: string; price?: number;category?:string; is_available?: boolean }>({
       query: ({ id, ...data }) => ({
         url: `/addons/${id}`,
         method: 'PUT',

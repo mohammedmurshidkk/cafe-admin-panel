@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,23 +19,41 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  useGetMenuItemsQuery, 
+import {
+  useGetMenuItemsQuery,
   useCreateMenuItemMutation,
   useUpdateMenuItemMutation,
-  useDeleteMenuItemMutation 
+  useDeleteMenuItemMutation,
+  useUploadMenuItemImageMutation
 } from '@/store/api/menuApi';
 import { useGetCategoriesQuery } from '@/store/api/categoriesApi';
 import { MenuItem, MenuItemFormData } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 
-const defaultFormData: MenuItemFormData = {
+type PricingType = 'single' | 'sizes';
+type SizePrice = { name: string; price: number };
+
+interface FormData {
+  name: string;
+  description: string;
+  category_id: string;
+  pricing_type: PricingType;
+  price: number;
+  sizes: SizePrice[];
+  is_customizable: boolean;
+  requires_date: boolean;
+  is_available: boolean;
+  special_notes: string;
+}
+
+const defaultFormData: FormData = {
   name: '',
   description: '',
   category_id: '',
-  base_price: 0,
-  sizes: [],
+  pricing_type: 'single',
+  price: 0,
+  sizes: [{ name: '', price: 0 }],
   is_customizable: false,
   requires_date: false,
   is_available: true,
@@ -43,49 +61,125 @@ const defaultFormData: MenuItemFormData = {
 };
 
 const Menu = () => {
-  const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<MenuItem | null>(null);
-  const [formData, setFormData] = useState<MenuItemFormData>(defaultFormData);
+  const [formData, setFormData] = useState<FormData>(defaultFormData);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: menuData, isLoading } = useGetMenuItemsQuery({ category: categoryFilter });
+  const { data: menuData, isLoading } = useGetMenuItemsQuery({ category: categoryFilter === 'all' ? '' : categoryFilter });
   const { data: categoriesData } = useGetCategoriesQuery();
   const [createItem, { isLoading: isCreating }] = useCreateMenuItemMutation();
   const [updateItem, { isLoading: isUpdating }] = useUpdateMenuItemMutation();
   const [deleteMenuItem, { isLoading: isDeleting }] = useDeleteMenuItemMutation();
+  const [uploadImage, { isLoading: isUploading }] = useUploadMenuItemImageMutation();
 
   const openForm = (item?: MenuItem) => {
     if (item) {
       setEditingItem(item);
+      const hasSizes = item.sizes && item.sizes.length > 0;
       setFormData({
         name: item.name,
         description: item.description,
         category_id: item.category_id,
-        base_price: item.base_price,
-        sizes: item.sizes,
+        pricing_type: hasSizes ? 'sizes' : 'single',
+        price: item.price || 0,
+        sizes: hasSizes ? item.sizes : [{ name: '', price: 0 }],
         is_customizable: item.is_customizable,
         requires_date: item.requires_date,
         is_available: item.is_available,
         special_notes: item.special_notes || '',
       });
+      setImagePreview(item.image_url || null);
     } else {
       setEditingItem(null);
       setFormData(defaultFormData);
+      setImagePreview(null);
     }
+    setImageFile(null);
     setIsFormOpen(true);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const addSize = () => {
+    setFormData(prev => ({
+      ...prev,
+      sizes: [...prev.sizes, { name: '', price: 0 }]
+    }));
+  };
+
+  const removeSize = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      sizes: prev.sizes.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateSize = (index: number, field: 'name' | 'price', value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      sizes: prev.sizes.map((size, i) =>
+        i === index ? { ...size, [field]: field === 'price' ? Number(value) : value } : size
+      )
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Build payload based on pricing type
+      const payload: Record<string, unknown> = {
+        name: formData.name,
+        description: formData.description,
+        category_id: formData.category_id,
+        is_customizable: formData.is_customizable,
+        requires_date: formData.requires_date,
+        is_available: formData.is_available,
+        special_notes: formData.special_notes,
+      };
+
+      if (formData.pricing_type === 'single') {
+        payload.price = formData.price;
+      } else {
+        payload.sizes = formData.sizes.filter(s => s.name && s.price > 0);
+      }
+
+      let itemId: string;
       if (editingItem) {
-        await updateItem({ itemId: editingItem.id, data: formData }).unwrap();
+        await updateItem({ itemId: editingItem.id, data: payload }).unwrap();
+        itemId = editingItem.id;
         toast.success('Menu item updated');
       } else {
-        await createItem(formData).unwrap();
+        const result = await createItem(payload).unwrap();
+        itemId = result.item.id;
         toast.success('Menu item created');
       }
+
+      // Upload image if selected
+      if (imageFile) {
+        const formDataImg = new window.FormData();
+        formDataImg.append('image', imageFile);
+        await uploadImage({ itemId, formData: formDataImg }).unwrap();
+      }
+
       setIsFormOpen(false);
     } catch (error) {
       toast.error('Failed to save menu item');
@@ -135,7 +229,7 @@ const Menu = () => {
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
             {categoriesData?.categories.map((cat) => (
               <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
             ))}
@@ -174,7 +268,18 @@ const Menu = () => {
                     <h3 className="font-semibold">{item.name}</h3>
                     <p className="text-sm text-muted-foreground">{item.category_name}</p>
                   </div>
-                  <p className="font-bold text-primary">{formatCurrency(item.base_price)}</p>
+                  {item.sizes && item.sizes.length > 0 ? (
+                    <div className="text-right">
+                      {item.sizes.map((size, idx) => (
+                        <p key={idx} className="text-sm">
+                          <span className="text-muted-foreground">{size.name}:</span>{' '}
+                          <span className="font-bold text-primary">{formatCurrency(size.price)}</span>
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="font-bold text-primary">{formatCurrency(item.price || 0)}</p>
+                  )}
                 </div>
                 
                 <div className="flex items-center justify-between mt-4">
@@ -240,37 +345,139 @@ const Menu = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select 
-                value={formData.category_id} 
-                onValueChange={(v) => setFormData(prev => ({ ...prev, category_id: v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoriesData?.categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Select
+              value={formData.category_id}
+              onValueChange={(v) => setFormData(prev => ({ ...prev, category_id: v }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categoriesData?.categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
+          {/* Image Upload */}
+          <div className="space-y-2">
+            <Label>Image</Label>
+            <div className="flex items-center gap-4">
+              {imagePreview ? (
+                <div className="relative w-24 h-24">
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                >
+                  <Upload className="h-6 w-6 text-muted-foreground" />
+                </div>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                {imagePreview ? 'Change' : 'Upload'}
+              </Button>
+            </div>
+          </div>
+
+          {/* Pricing Type Toggle */}
+          <div className="space-y-2">
+            <Label>Pricing Type</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="pricing_type"
+                  checked={formData.pricing_type === 'single'}
+                  onChange={() => setFormData(prev => ({ ...prev, pricing_type: 'single' }))}
+                  className="accent-primary"
+                />
+                <span>Single Price</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="pricing_type"
+                  checked={formData.pricing_type === 'sizes'}
+                  onChange={() => setFormData(prev => ({ ...prev, pricing_type: 'sizes' }))}
+                  className="accent-primary"
+                />
+                <span>Size-Based Pricing</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Single Price Input */}
+          {formData.pricing_type === 'single' ? (
             <div className="space-y-2">
-              <Label htmlFor="price">Base Price *</Label>
+              <Label htmlFor="price">Price *</Label>
               <Input
                 id="price"
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.base_price}
-                onChange={(e) => setFormData(prev => ({ ...prev, base_price: parseFloat(e.target.value) || 0 }))}
+                value={formData.price}
+                onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
                 required
               />
             </div>
-          </div>
+          ) : (
+            /* Size-Based Pricing Inputs */
+            <div className="space-y-3">
+              <Label>Sizes & Prices *</Label>
+              {formData.sizes.map((size, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <Input
+                    placeholder="Size (e.g., 500g, Small)"
+                    value={size.name}
+                    onChange={(e) => updateSize(index, 'name', e.target.value)}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    placeholder="Price"
+                    min="0"
+                    step="0.01"
+                    value={size.price || ''}
+                    onChange={(e) => updateSize(index, 'price', e.target.value)}
+                    className="w-28"
+                  />
+                  {formData.sizes.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeSize(index)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={addSize}>
+                <Plus className="h-4 w-4 mr-1" /> Add Size
+              </Button>
+            </div>
+          )}
 
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
@@ -305,8 +512,8 @@ const Menu = () => {
             <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" variant="gradient" disabled={isCreating || isUpdating}>
-              {editingItem ? 'Update' : 'Create'}
+            <Button type="submit" variant="gradient" disabled={isCreating || isUpdating || isUploading}>
+              {isUploading ? 'Uploading...' : editingItem ? 'Update' : 'Create'}
             </Button>
           </div>
         </form>

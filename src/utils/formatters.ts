@@ -21,7 +21,7 @@ export const formatTimeAgo = (date: string): string => {
   return formatDistanceToNow(parseISO(date), { addSuffix: true });
 };
 
-export const formatPhone = (phone: string): string => {
+export const formatPhone = (phone: string = ''): string => {
   if (phone.startsWith('+91')) {
     const number = phone.slice(3);
     return `+91 ${number.slice(0, 5)} ${number.slice(5)}`;

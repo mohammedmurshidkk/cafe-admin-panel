@@ -7,13 +7,13 @@ export const menuApi = apiSlice.injectEndpoints({
       query: ({ category }) => {
         const params = new URLSearchParams();
         if (category) params.append('category', category);
-        return `/menu?${params.toString()}`;
+        return `admin/menu?${params.toString()}`;
       },
       providesTags: ['Menu'],
     }),
-    createMenuItem: builder.mutation<{ item: MenuItem }, MenuItemFormData>({
+    createMenuItem: builder.mutation<{ item: MenuItem }, Record<string, unknown>>({
       query: (item) => ({
-        url: '/menu',
+        url: 'admin/menu',
         method: 'POST',
         body: item,
       }),
@@ -21,7 +21,7 @@ export const menuApi = apiSlice.injectEndpoints({
     }),
     updateMenuItem: builder.mutation<{ item: MenuItem }, { itemId: string; data: Partial<MenuItemFormData> }>({
       query: ({ itemId, data }) => ({
-        url: `/menu/${itemId}`,
+        url: `admin/menu/${itemId}`,
         method: 'PUT',
         body: data,
       }),
@@ -29,14 +29,14 @@ export const menuApi = apiSlice.injectEndpoints({
     }),
     deleteMenuItem: builder.mutation<{ success: boolean }, string>({
       query: (itemId) => ({
-        url: `/menu/${itemId}`,
+        url: `admin/menu/${itemId}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Menu'],
     }),
     uploadMenuItemImage: builder.mutation<{ image_url: string }, { itemId: string; formData: FormData }>({
       query: ({ itemId, formData }) => ({
-        url: `/menu/${itemId}/image`,
+        url: `admin/menu/${itemId}/image`,
         method: 'POST',
         body: formData,
       }),

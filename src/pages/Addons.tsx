@@ -89,11 +89,18 @@ const Addons = () => {
         await updateAddon({ 
           id: editingAddon.id, 
           name: addonData.name, 
+          category: addonData.group_id,
           price: addonData.price 
         }).unwrap();
         toast.success('Addon updated');
       } else {
-        await createAddon(addonData).unwrap();
+
+        const finalData = {
+          ...addonData,
+          category: addonData.group_id
+        }
+
+        await createAddon(finalData).unwrap();
         toast.success('Addon created');
       }
       setIsAddonFormOpen(false);
@@ -339,7 +346,7 @@ const Addons = () => {
                 </SelectTrigger>
                 <SelectContent>
                   {data?.groups.map((group) => (
-                    <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                    <SelectItem key={group.name} value={group.name}>{group.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

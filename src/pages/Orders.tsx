@@ -18,8 +18,8 @@ import { formatCurrency, formatDateTime, truncateId, formatPhone } from '@/utils
 import { Order, OrderStatus } from '@/types';
 import { toast } from 'sonner';
 
-const statusOptions: { value: OrderStatus | ''; label: string }[] = [
-  { value: '', label: 'All Statuses' },
+const statusOptions: { value: OrderStatus | 'all'; label: string }[] = [
+  { value: 'all', label: 'All Statuses' },
   { value: 'pending', label: 'Pending' },
   { value: 'confirmed', label: 'Confirmed' },
   { value: 'preparing', label: 'Preparing' },
@@ -29,7 +29,7 @@ const statusOptions: { value: OrderStatus | ''; label: string }[] = [
 
 const Orders = () => {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -38,7 +38,7 @@ const Orders = () => {
   };
 
   const { data, isLoading } = useGetOrdersQuery({ 
-    status: statusFilter, 
+    status: statusFilter === 'all' ? '' : statusFilter, 
     search, 
     page,
     limit: 20 
@@ -112,7 +112,7 @@ const Orders = () => {
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as OrderStatus | '')}>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as OrderStatus | null)}>
           <SelectTrigger className="w-full sm:w-48">
             <Filter className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Filter by status" />

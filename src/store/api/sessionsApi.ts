@@ -15,7 +15,7 @@ export const sessionsApi = apiSlice.injectEndpoints({
         if (status && status !== 'all') params.append('status', status);
         params.append('page', String(page));
         params.append('limit', String(limit));
-        return `/sessions?${params.toString()}`;
+        return `admin/sessions?${params.toString()}`;
       },
       providesTags: ['Sessions'],
     }),
@@ -24,17 +24,17 @@ export const sessionsApi = apiSlice.injectEndpoints({
         const params = new URLSearchParams();
         if (status) params.append('status', status);
         params.append('limit', String(limit));
-        return `/sessions?${params.toString()}`;
+        return `admin/sessions?${params.toString()}`;
       },
       providesTags: ['Sessions'],
     }),
     getSessionDetail: builder.query<SessionDetail, string>({
-      query: (sessionId) => `/sessions/${sessionId}`,
+      query: (sessionId) => `admin/sessions/${sessionId}`,
       providesTags: ['Sessions'],
     }),
     toggleAiPause: builder.mutation<SuccessResponse, { sessionId: string; paused: boolean }>({
       query: ({ sessionId, paused }) => ({
-        url: `/sessions/${sessionId}/ai-pause`,
+        url: `admin/sessions/${sessionId}/ai-pause`,
         method: 'PATCH',
         body: { paused },
       }),
