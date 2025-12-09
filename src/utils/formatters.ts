@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, parseISO } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-IN', {
@@ -9,16 +9,31 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
+const createUtcDate = (dateString: string): Date => {
+  if (!dateString) {
+    return new Date(NaN); // Return an invalid date for invalid input
+  }
+  // If the date string doesn't end with 'Z', append it to ensure it's parsed as UTC.
+  const correctedDateString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+  return new Date(correctedDateString);
+}
+
 export const formatDate = (date: string): string => {
-  return format(parseISO(date), 'MMM d, yyyy');
+  const d = createUtcDate(date);
+  if (isNaN(d.getTime())) return "Invalid date";
+  return format(d, 'MMM d, yyyy');
 };
 
 export const formatDateTime = (date: string): string => {
-  return format(parseISO(date), 'MMM d, yyyy h:mm a');
+  const d = createUtcDate(date);
+  if (isNaN(d.getTime())) return "Invalid date";
+  return format(d, 'MMM d, yyyy h:mm a');
 };
 
 export const formatTimeAgo = (date: string): string => {
-  return formatDistanceToNow(parseISO(date), { addSuffix: true });
+  const d = createUtcDate(date);
+  if (isNaN(d.getTime())) return "";
+  return formatDistanceToNow(d, { addSuffix: true });
 };
 
 export const formatPhone = (phone: string = ''): string => {

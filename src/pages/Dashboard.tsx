@@ -32,8 +32,7 @@ const Dashboard = () => {
 
   const { data: stats, isLoading: statsLoading } = useGetDashboardStatsQuery();
   const { data: ordersData, isLoading: ordersLoading } = useGetRecentOrdersQuery({ 
-    limit: 5, 
-    status: 'pending' 
+    limit: 5
   });
   const { data: sessionsData, isLoading: sessionsLoading } = useGetRecentSessionsQuery({ 
     status: 'active', 
