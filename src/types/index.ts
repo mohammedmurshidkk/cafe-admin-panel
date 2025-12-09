@@ -26,11 +26,13 @@ export interface DashboardStats {
 
 // Order types
 export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'completed' | 'cancelled';
+export type FulfillmentType = 'delivery' | 'takeaway';
 
 export interface OrderItem {
   name: string;
   quantity: number;
   unit_price: number;
+  notes?: string;
 }
 
 export interface Order {
@@ -40,6 +42,9 @@ export interface Order {
   total: number;
   status: OrderStatus;
   created_at: string;
+  fulfillment_type?: FulfillmentType;
+  fulfillment_datetime?: string;
+  fulfillment_location?: string;
 }
 
 export interface OrdersResponse {
@@ -58,6 +63,12 @@ export interface Session {
   items_count: number;
   last_message_at: string;
   created_at: string;
+}
+
+export interface SessionItem {
+  name: string;
+  quantity: number;
+  unit_price?: number;
 }
 
 export interface SessionMessage {
@@ -119,8 +130,18 @@ export interface MenuResponse {
 export interface Category {
   id: string;
   name: string;
+  description?: string;
+  image_url?: string | null;
+  custom_text_prompt?: string;
   sort_order: number;
   items_count: number;
+}
+
+export interface CategoryFormData {
+  name: string;
+  description?: string;
+  image_url?: string | null;
+  custom_text_prompt?: string;
 }
 
 export interface CategoriesResponse {

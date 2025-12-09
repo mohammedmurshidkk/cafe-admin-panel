@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Truck, Store } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FormModal } from '@/components/ui/FormModal';
+import { OrderDetailModal } from '@/components/orders/OrderDetailModal';
 import {
   Select,
   SelectContent,
@@ -69,6 +68,31 @@ const Orders = () => {
       render: (order: Order) => formatPhone(order.customer_phone),
     },
     {
+      key: 'fulfillment_type',
+      header: 'Type',
+      render: (order: Order) => (
+        <div className="flex items-center gap-2">
+          {order.fulfillment_type === 'delivery' ? (
+            <Truck className="h-4 w-4 text-primary" />
+          ) : order.fulfillment_type === 'takeaway' ? (
+            <Store className="h-4 w-4 text-secondary" />
+          ) : null}
+          <span className="capitalize">{order.fulfillment_type || 'N/A'}</span>
+        </div>
+      ),
+      className: 'hidden md:table-cell',
+    },
+    {
+      key: 'location',
+      header: 'Location',
+      render: (order: Order) => (
+        <span className="text-sm text-muted-foreground truncate max-w-[150px] block">
+          {order.fulfillment_location || 'N/A'}
+        </span>
+      ),
+      className: 'hidden lg:table-cell',
+    },
+    {
       key: 'items',
       header: 'Items',
       render: (order: Order) => `${order.items.length} items`,
@@ -112,7 +136,7 @@ const Orders = () => {
             className="pl-10"
           />
         </div>
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as OrderStatus | null)}>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as OrderStatus | 'all')}>
           <SelectTrigger className="w-full sm:w-48">
             <Filter className="h-4 w-4 mr-2" />
             <SelectValue placeholder="Filter by status" />
@@ -137,54 +161,12 @@ const Orders = () => {
       />
 
       {/* Order Detail Modal */}
-      <FormModal
-        open={!!selectedOrder}
-        onOpenChange={() => setSelectedOrder(null)}
-        title={`Order #${selectedOrder ? truncateId(selectedOrder.id) : ''}`}
-        description={selectedOrder ? formatPhone(selectedOrder.customer_phone) : ''}
-      >
-        {selectedOrder && (
-          <div className="space-y-6">
-            {/* Items */}
-            <div>
-              <h4 className="font-semibold mb-3">Items</h4>
-              <div className="space-y-2">
-                {selectedOrder.items.map((item, idx) => (
-                  <div key={idx} className="flex justify-between py-2 border-b border-border last:border-0">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-                    </div>
-                    <p className="font-semibold">{formatCurrency(item.quantity * item.unit_price)}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-between pt-4 border-t border-border mt-4">
-                <p className="font-semibold">Total</p>
-                <p className="font-bold text-lg">{formatCurrency(selectedOrder.total)}</p>
-              </div>
-            </div>
-
-            {/* Status Update */}
-            <div>
-              <h4 className="font-semibold mb-3">Update Status</h4>
-              <div className="flex flex-wrap gap-2">
-                {(['preparing', 'completed', 'cancelled'] as OrderStatus[]).map((status) => (
-                  <Button
-                    key={status}
-                    variant={status === 'cancelled' ? 'destructive' : status === 'completed' ? 'success' : 'warning'}
-                    size="sm"
-                    disabled={isUpdating || selectedOrder.status === status}
-                    onClick={() => handleStatusChange(selectedOrder.id, status)}
-                  >
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </FormModal>
+      <OrderDetailModal
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+        onStatusChange={handleStatusChange}
+        isUpdating={isUpdating}
+      />
     </div>
   );
 };

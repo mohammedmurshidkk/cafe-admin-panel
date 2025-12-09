@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload } from 'lucide-react';
+import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload, Search } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +62,7 @@ const defaultFormData: FormData = {
 
 const Menu = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [deleteItem, setDeleteItem] = useState<MenuItem | null>(null);
@@ -72,6 +73,13 @@ const Menu = () => {
 
   const { data: menuData, isLoading } = useGetMenuItemsQuery({ category: categoryFilter === 'all' ? '' : categoryFilter });
   const { data: categoriesData } = useGetCategoriesQuery();
+  
+  // Filter menu items by search query
+  const filteredItems = menuData?.items?.filter(item =>
+    !searchQuery || 
+    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) ?? [];
   const [createItem, { isLoading: isCreating }] = useCreateMenuItemMutation();
   const [updateItem, { isLoading: isUpdating }] = useUpdateMenuItemMutation();
   const [deleteMenuItem, { isLoading: isDeleting }] = useDeleteMenuItemMutation();
@@ -222,10 +230,19 @@ const Menu = () => {
         }
       />
 
-      {/* Category Filter */}
-      <div className="flex justify-end">
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search menu items..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
@@ -244,9 +261,9 @@ const Menu = () => {
             <Skeleton key={i} className="h-64 w-full rounded-xl" />
           ))}
         </div>
-      ) : menuData?.items?.length ? (
+      ) : filteredItems.length ? (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {menuData.items.map((item) => (
+          {filteredItems.map((item) => (
             <div key={item.id} className="card-warm overflow-hidden">
               {/* Image */}
               <div className="h-40 bg-muted flex items-center justify-center">
