@@ -85,7 +85,7 @@ const CompanyProfile = () => {
     if (outlet) {
       setEditingOutlet(outlet);
       setOutletData({
-        name: outlet.name,
+        name: outlet.outlet_name,
         address: outlet.address,
         phone: outlet.phone,
         is_active: outlet.is_active,
@@ -225,7 +225,7 @@ const CompanyProfile = () => {
                   <Phone className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{outlet.name}</p>
+                      <p className="font-medium">{outlet.outlet_name}</p>
                       <Badge variant={outlet.is_active ? 'active' : 'secondary'}>
                         {outlet.is_active ? 'Active' : 'Inactive'}
                       </Badge>

@@ -9,7 +9,7 @@ export const addonsApi = apiSlice.injectEndpoints({
     }),
     createAddonGroup: builder.mutation<{ group: AddonGroup }, { name: string }>({
       query: (data) => ({
-        url: '/addon-groups',
+        url: '/addons/groups',
         method: 'POST',
         body: data,
       }),

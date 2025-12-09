@@ -152,6 +152,7 @@ export interface Outlet {
   address: string;
   phone: string;
   is_active: boolean;
+  outlet_name?: string
 }
 
 export interface Business {
