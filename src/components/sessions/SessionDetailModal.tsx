@@ -123,54 +123,57 @@ export const SessionDetailModal = ({
                   No messages yet
                 </div>
               ) : (
-                sessionDetail.messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={cn(
-                      "flex",
-                      msg.direction === 'inbound' ? "justify-start" : "justify-end"
-                    )}
-                  >
+                sessionDetail.messages.map((msg) => {
+                  const isIncoming = msg.direction === 'incoming' || msg.direction === 'inbound';
+                  return (
                     <div
+                      key={msg.id}
                       className={cn(
-                        "relative max-w-[75%] px-3 py-2 rounded-lg shadow-sm",
-                        msg.direction === 'inbound' 
-                          ? "bg-background border border-border rounded-tl-none" 
-                          : "bg-secondary/20 text-foreground rounded-tr-none"
+                        "flex",
+                        isIncoming ? "justify-start" : "justify-end"
                       )}
                     >
-                      {/* Message tail */}
-                      <div 
+                      <div
                         className={cn(
-                          "absolute top-0 w-3 h-3",
-                          msg.direction === 'inbound'
-                            ? "-left-3 border-t border-l border-border bg-background"
-                            : "-right-3 bg-secondary/20"
+                          "relative max-w-[75%] px-3 py-2 rounded-lg shadow-sm",
+                          isIncoming 
+                            ? "bg-background border border-border rounded-tl-none" 
+                            : "bg-secondary/20 text-foreground rounded-tr-none"
                         )}
-                        style={{
-                          clipPath: msg.direction === 'inbound' 
-                            ? 'polygon(100% 0, 0 0, 100% 100%)' 
-                            : 'polygon(0 0, 100% 0, 0 100%)'
-                        }}
-                      />
-                      
-                      {/* Message content */}
-                      <p className="text-sm whitespace-pre-wrap break-words">
-                        {msg.content}
-                      </p>
-                      
-                      {/* Timestamp and read status */}
-                      <div className="flex items-center justify-end gap-1 mt-1">
-                        <span className="text-[10px] text-muted-foreground">
-                          {formatDateTime(msg.created_at)}
-                        </span>
-                        {msg.direction === 'outbound' && (
-                          <CheckCheck className="h-3 w-3 text-secondary" />
-                        )}
+                      >
+                        {/* Message tail */}
+                        <div 
+                          className={cn(
+                            "absolute top-0 w-3 h-3",
+                            isIncoming
+                              ? "-left-3 border-t border-l border-border bg-background"
+                              : "-right-3 bg-secondary/20"
+                          )}
+                          style={{
+                            clipPath: isIncoming 
+                              ? 'polygon(100% 0, 0 0, 100% 100%)' 
+                              : 'polygon(0 0, 100% 0, 0 100%)'
+                          }}
+                        />
+                        
+                        {/* Message content */}
+                        <p className="text-sm whitespace-pre-wrap break-words">
+                          {msg.content}
+                        </p>
+                        
+                        {/* Timestamp and read status */}
+                        <div className="flex items-center justify-end gap-1 mt-1">
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatDateTime(msg.created_at)}
+                          </span>
+                          {!isIncoming && (
+                            <CheckCheck className="h-3 w-3 text-secondary" />
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
