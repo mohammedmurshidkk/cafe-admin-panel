@@ -73,7 +73,7 @@ export interface SessionItem {
 
 export interface SessionMessage {
   id: string;
-  direction: 'inbound' | 'outbound';
+  direction: 'inbound' | 'outbound' | 'incoming' | 'outgoing';
   content: string;
   created_at: string;
 }
