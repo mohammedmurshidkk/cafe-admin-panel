@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { MessageSquare, Pause, Play, Phone } from 'lucide-react';
+import { MessageSquare, Pause, Play, Phone, Search } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FormModal } from '@/components/ui/FormModal';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SessionDetailModal } from '@/components/sessions/SessionDetailModal';
 import {
   Select,
   SelectContent,
@@ -17,10 +18,9 @@ import {
   useGetSessionDetailQuery, 
   useToggleAiPauseMutation 
 } from '@/store/api/sessionsApi';
-import { formatTimeAgo, formatPhone, formatDateTime } from '@/utils/formatters';
+import { formatTimeAgo, formatPhone } from '@/utils/formatters';
 import { Session, SessionStatus } from '@/types';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 const statusOptions: { value: SessionStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All Sessions' },
@@ -30,6 +30,7 @@ const statusOptions: { value: SessionStatus | 'all'; label: string }[] = [
 
 const Sessions = () => {
   const [statusFilter, setStatusFilter] = useState<SessionStatus | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
@@ -57,6 +58,22 @@ const Sessions = () => {
     }
   };
 
+  const handleSessionToggleAi = async (paused: boolean) => {
+    if (!selectedSessionId) return;
+    try {
+      await toggleAiPause({ sessionId: selectedSessionId, paused }).unwrap();
+      toast.success(paused ? 'AI paused' : 'AI resumed');
+    } catch (error) {
+      toast.error('Failed to toggle AI');
+    }
+  };
+
+  // Filter sessions by phone number search
+  const filteredSessions = data?.sessions?.filter(session => 
+    !searchQuery || 
+    session.customer_phone.toLowerCase().includes(searchQuery.toLowerCase().replace(/\s/g, ''))
+  ) ?? [];
+
   return (
     <div className="space-y-6 animate-fade-in">
       <PageHeader 
@@ -64,10 +81,19 @@ const Sessions = () => {
         description="View and manage customer chat sessions"
       />
 
-      {/* Filter */}
-      <div className="flex justify-end">
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by phone number..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as SessionStatus | 'all')}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -87,9 +113,9 @@ const Sessions = () => {
             <Skeleton key={i} className="h-24 w-full rounded-xl" />
           ))}
         </div>
-      ) : data?.sessions?.length ? (
+      ) : filteredSessions.length ? (
         <div className="grid gap-4">
-          {data.sessions.map((session) => (
+          {filteredSessions.map((session) => (
             <div
               key={session.id}
               onClick={() => setSelectedSessionId(session.id)}
@@ -128,63 +154,19 @@ const Sessions = () => {
         </div>
       ) : (
         <div className="text-center py-12 text-muted-foreground">
-          No sessions found
+          {searchQuery ? 'No sessions found matching your search' : 'No sessions found'}
         </div>
       )}
 
       {/* Session Detail Modal */}
-      <FormModal
+      <SessionDetailModal
         open={!!selectedSessionId}
-        onOpenChange={() => setSelectedSessionId(null)}
-        title="Session Details"
-        description={sessionDetail?.session ? formatPhone(sessionDetail.session.customer_phone) : ''}
-      >
-        {detailLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-40 w-full" />
-          </div>
-        ) : sessionDetail && (
-          <div className="space-y-6">
-            {/* Cart Items */}
-            {sessionDetail.session.items?.length > 0 && (
-              <div>
-                <h4 className="font-semibold mb-3">Cart Items</h4>
-                <div className="space-y-2 bg-muted/50 rounded-lg p-3">
-                  {sessionDetail.session.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between text-sm">
-                      <span>{item.name} × {item.quantity}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Messages */}
-            <div>
-              <h4 className="font-semibold mb-3">Conversation</h4>
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {sessionDetail.messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={cn(
-                      "p-3 rounded-lg max-w-[85%]",
-                      msg.direction === 'inbound' 
-                        ? "bg-muted ml-0" 
-                        : "bg-primary/10 ml-auto"
-                    )}
-                  >
-                    <p className="text-sm">{msg.content}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDateTime(msg.created_at)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </FormModal>
+        onClose={() => setSelectedSessionId(null)}
+        sessionDetail={sessionDetail}
+        isLoading={detailLoading}
+        onToggleAi={handleSessionToggleAi}
+        isToggling={isToggling}
+      />
     </div>
   );
 };
