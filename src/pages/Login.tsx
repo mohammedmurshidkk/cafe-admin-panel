@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,8 +12,13 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading, isAuthenticated } = useAuth();
+  const { user } = useSelector((state: RootState) => state.auth);
 
-  if (isAuthenticated) {
+  // Redirect based on role
+  if (isAuthenticated && user) {
+    if (user.role === 'superadmin') {
+      return <Navigate to="/superadmin/businesses" replace />;
+    }
     return <Navigate to="/dashboard" replace />;
   }
 
