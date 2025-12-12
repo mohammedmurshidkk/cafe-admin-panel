@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 interface CreateAdminModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (email: string, password: string) => Promise<void>;
+  onSubmit: (name: string, email: string, password: string) => Promise<void>;
   businessName: string;
   isLoading?: boolean;
 }
@@ -18,6 +18,7 @@ export const CreateAdminModal = ({
   businessName,
   isLoading,
 }: CreateAdminModalProps) => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -25,6 +26,11 @@ export const CreateAdminModal = ({
 
   const handleSubmit = async () => {
     setError('');
+    
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
     
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -36,13 +42,15 @@ export const CreateAdminModal = ({
       return;
     }
 
-    await onSubmit(email, password);
+    await onSubmit(name, email, password);
+    setName('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
   };
 
   const handleClose = () => {
+    setName('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
@@ -64,6 +72,18 @@ export const CreateAdminModal = ({
           <p className="text-sm">
             Creating first admin for <strong>{businessName}</strong>
           </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="admin_name">Name *</Label>
+          <Input
+            id="admin_name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Admin Name"
+            required
+          />
         </div>
 
         <div className="space-y-2">

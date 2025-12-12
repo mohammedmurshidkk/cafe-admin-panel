@@ -8,6 +8,14 @@ interface UpdateBusinessData {
   custom_ai_prompt?: string;
   critical_message?: string;
   critical_message_enabled?: boolean;
+  order_number_prefix?: string;
+  customer_support_phone?: string;
+  supports_delivery?: boolean;
+  supports_takeaway?: boolean;
+  delivery_fee?: number;
+  free_delivery_above?: number;
+  delivery_radius_km?: number;
+  minimum_wait_minutes?: number;
 }
 
 interface OutletData {

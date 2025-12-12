@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Building2, 
   MapPin, 
@@ -10,7 +10,11 @@ import {
   Trash2,
   Phone,
   Save,
-  ImageIcon
+  ImageIcon,
+  Truck,
+  ShoppingBag,
+  Settings,
+  Upload
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -25,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   useGetBusinessProfileQuery,
   useUpdateBusinessProfileMutation,
+  useUploadBusinessLogoMutation,
   useCreateOutletMutation,
   useUpdateOutletMutation,
   useDeleteOutletMutation
@@ -36,9 +41,12 @@ import { cn } from '@/lib/utils';
 const CompanyProfile = () => {
   const { data, isLoading } = useGetBusinessProfileQuery();
   const [updateProfile, { isLoading: isSaving }] = useUpdateBusinessProfileMutation();
+  const [uploadLogo, { isLoading: isUploadingLogo }] = useUploadBusinessLogoMutation();
   const [createOutlet, { isLoading: isCreatingOutlet }] = useCreateOutletMutation();
   const [updateOutlet, { isLoading: isUpdatingOutlet }] = useUpdateOutletMutation();
   const [deleteOutletMutation, { isLoading: isDeletingOutlet }] = useDeleteOutletMutation();
+  
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
   const [businessName, setBusinessName] = useState('');
@@ -47,6 +55,14 @@ const CompanyProfile = () => {
   const [customAiPrompt, setCustomAiPrompt] = useState('');
   const [criticalMessage, setCriticalMessage] = useState('');
   const [criticalEnabled, setCriticalEnabled] = useState(false);
+  const [orderNumberPrefix, setOrderNumberPrefix] = useState('');
+  const [customerSupportPhone, setCustomerSupportPhone] = useState('');
+  const [supportsDelivery, setSupportsDelivery] = useState(true);
+  const [supportsTakeaway, setSupportsTakeaway] = useState(true);
+  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [freeDeliveryAbove, setFreeDeliveryAbove] = useState(0);
+  const [deliveryRadiusKm, setDeliveryRadiusKm] = useState(0);
+  const [minimumWaitMinutes, setMinimumWaitMinutes] = useState(30);
 
   // Outlet states
   const [isOutletFormOpen, setIsOutletFormOpen] = useState(false);
@@ -62,6 +78,14 @@ const CompanyProfile = () => {
       setCustomAiPrompt(data.business.custom_ai_prompt);
       setCriticalMessage(data.business.critical_message);
       setCriticalEnabled(data.business.critical_message_enabled);
+      setOrderNumberPrefix(data.business.order_number_prefix || '');
+      setCustomerSupportPhone(data.business.customer_support_phone || '');
+      setSupportsDelivery(data.business.supports_delivery);
+      setSupportsTakeaway(data.business.supports_takeaway);
+      setDeliveryFee(data.business.delivery_fee || 0);
+      setFreeDeliveryAbove(data.business.free_delivery_above || 0);
+      setDeliveryRadiusKm(data.business.delivery_radius_km || 0);
+      setMinimumWaitMinutes(data.business.minimum_wait_minutes || 30);
     }
   }, [data]);
 
@@ -74,6 +98,14 @@ const CompanyProfile = () => {
         custom_ai_prompt: customAiPrompt,
         critical_message: criticalMessage,
         critical_message_enabled: criticalEnabled,
+        order_number_prefix: orderNumberPrefix,
+        customer_support_phone: customerSupportPhone,
+        supports_delivery: supportsDelivery,
+        supports_takeaway: supportsTakeaway,
+        delivery_fee: deliveryFee,
+        free_delivery_above: freeDeliveryAbove,
+        delivery_radius_km: deliveryRadiusKm,
+        minimum_wait_minutes: minimumWaitMinutes,
       }).unwrap();
       toast.success('Profile updated successfully');
     } catch (error) {
@@ -81,11 +113,26 @@ const CompanyProfile = () => {
     }
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('logo', file);
+    
+    try {
+      await uploadLogo(formData).unwrap();
+      toast.success('Logo uploaded successfully');
+    } catch (error) {
+      toast.error('Failed to upload logo');
+    }
+  };
+
   const openOutletForm = (outlet?: Outlet) => {
     if (outlet) {
       setEditingOutlet(outlet);
       setOutletData({
-        name: outlet.outlet_name,
+        name: outlet.outlet_name || outlet.name,
         address: outlet.address,
         phone: outlet.phone,
         is_active: outlet.is_active,
@@ -181,6 +228,26 @@ const CompanyProfile = () => {
               Registered with Meta - cannot be changed
             </p>
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="orderPrefix">Order Number Prefix</Label>
+            <Input
+              id="orderPrefix"
+              value={orderNumberPrefix}
+              onChange={(e) => setOrderNumberPrefix(e.target.value)}
+              placeholder="e.g., ORD"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="supportPhone">Customer Support Phone</Label>
+            <Input
+              id="supportPhone"
+              value={customerSupportPhone}
+              onChange={(e) => setCustomerSupportPhone(e.target.value)}
+              placeholder="+91 98765 43210"
+            />
+          </div>
         </div>
 
         {/* Logo */}
@@ -194,8 +261,127 @@ const CompanyProfile = () => {
                 <ImageIcon className="h-8 w-8 text-muted-foreground" />
               )}
             </div>
-            <Button variant="outline">Upload Logo</Button>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+            <Button 
+              variant="outline" 
+              onClick={() => logoInputRef.current?.click()}
+              disabled={isUploadingLogo}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              {isUploadingLogo ? 'Uploading...' : 'Upload Logo'}
+            </Button>
           </div>
+        </div>
+      </div>
+
+      {/* Order Settings */}
+      <div className="card-warm p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
+            <Settings className="h-5 w-5 text-secondary" />
+          </div>
+          <h2 className="font-display font-semibold text-lg">Order Settings</h2>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <Truck className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <Label htmlFor="supportsDelivery" className="cursor-pointer font-medium">
+                  Delivery
+                </Label>
+                <p className="text-xs text-muted-foreground">Enable delivery orders</p>
+              </div>
+            </div>
+            <Switch
+              id="supportsDelivery"
+              checked={supportsDelivery}
+              onCheckedChange={setSupportsDelivery}
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-3">
+              <ShoppingBag className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <Label htmlFor="supportsTakeaway" className="cursor-pointer font-medium">
+                  Takeaway
+                </Label>
+                <p className="text-xs text-muted-foreground">Enable takeaway orders</p>
+              </div>
+            </div>
+            <Switch
+              id="supportsTakeaway"
+              checked={supportsTakeaway}
+              onCheckedChange={setSupportsTakeaway}
+            />
+          </div>
+        </div>
+
+        {supportsDelivery && (
+          <div className="mt-6 p-4 border border-border rounded-lg space-y-4">
+            <h4 className="font-medium text-sm flex items-center gap-2">
+              <Truck className="h-4 w-4" />
+              Delivery Settings
+            </h4>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="deliveryFee">Delivery Fee</Label>
+                <Input
+                  id="deliveryFee"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={deliveryFee}
+                  onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="freeDeliveryAbove">Free Delivery Above</Label>
+                <Input
+                  id="freeDeliveryAbove"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={freeDeliveryAbove}
+                  onChange={(e) => setFreeDeliveryAbove(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="deliveryRadius">Delivery Radius (km)</Label>
+                <Input
+                  id="deliveryRadius"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={deliveryRadiusKm}
+                  onChange={(e) => setDeliveryRadiusKm(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 space-y-2">
+          <Label htmlFor="minimumWait">Minimum Wait Time (minutes)</Label>
+          <Input
+            id="minimumWait"
+            type="number"
+            min="0"
+            value={minimumWaitMinutes}
+            onChange={(e) => setMinimumWaitMinutes(parseInt(e.target.value) || 0)}
+            className="max-w-xs"
+          />
+          <p className="text-xs text-muted-foreground">
+            Minimum preparation time before order can be ready
+          </p>
         </div>
       </div>
 
@@ -225,7 +411,7 @@ const CompanyProfile = () => {
                   <Phone className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{outlet.outlet_name}</p>
+                      <p className="font-medium">{outlet.outlet_name || outlet.name}</p>
                       <Badge variant={outlet.is_active ? 'active' : 'secondary'}>
                         {outlet.is_active ? 'Active' : 'Inactive'}
                       </Badge>
@@ -414,7 +600,7 @@ const CompanyProfile = () => {
         open={!!deleteOutlet}
         onOpenChange={() => setDeleteOutlet(null)}
         title="Delete Outlet"
-        description={`Are you sure you want to delete "${deleteOutlet?.name}"? This action cannot be undone.`}
+        description={`Are you sure you want to delete "${deleteOutlet?.outlet_name || deleteOutlet?.name}"? This action cannot be undone.`}
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={handleDeleteOutlet}
