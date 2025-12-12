@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from './components/layout/AppLayout';
+import { SuperadminLayout } from './components/layout/SuperadminLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
@@ -12,6 +13,7 @@ import Menu from './pages/Menu';
 import Categories from './pages/Categories';
 import Addons from './pages/Addons';
 import CompanyProfile from './pages/CompanyProfile';
+import SuperadminBusinesses from './pages/SuperadminBusinesses';
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -21,6 +23,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          {/* Superadmin routes */}
+          <Route path="/superadmin" element={<SuperadminLayout />}>
+            <Route path="businesses" element={<SuperadminBusinesses />} />
+          </Route>
+          {/* Regular admin routes */}
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/orders" element={<Orders />} />

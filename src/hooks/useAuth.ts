@@ -16,7 +16,12 @@ export const useAuth = () => {
       const result = await loginMutation({ email, password }).unwrap();
       dispatch(setCredentials({ user: result.user, token: result.token }));
       toast.success('Welcome back!');
-      navigate('/dashboard');
+      // Redirect based on role
+      if (result.user.role === 'superadmin') {
+        navigate('/superadmin/businesses');
+      } else {
+        navigate('/dashboard');
+      }
       return { success: true };
     } catch (error: any) {
       const message = error?.data?.error || 'Invalid credentials';

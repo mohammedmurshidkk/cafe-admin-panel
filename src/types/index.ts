@@ -1,9 +1,12 @@
 // Auth types
+export type UserRole = 'admin' | 'superadmin';
+
 export interface User {
   id: string;
   email: string;
-  business_id: string;
-  business_name: string;
+  business_id?: string;
+  business_name?: string;
+  role: UserRole;
 }
 
 export interface LoginRequest {
@@ -14,6 +17,46 @@ export interface LoginRequest {
 export interface LoginResponse {
   token: string;
   user: User;
+}
+
+// Superadmin Business types
+export interface SuperadminBusiness {
+  id: string;
+  name: string;
+  phone: string;
+  address?: string;
+  logo_url?: string | null;
+  is_active: boolean;
+  supports_delivery: boolean;
+  supports_takeaway: boolean;
+  delivery_fee?: number;
+  free_delivery_above?: number;
+  minimum_wait_minutes?: number;
+  admin_count: number;
+  created_at: string;
+}
+
+export interface SuperadminBusinessFormData {
+  name: string;
+  phone: string;
+  address?: string;
+  is_active: boolean;
+  supports_delivery: boolean;
+  supports_takeaway: boolean;
+  delivery_fee?: number;
+  free_delivery_above?: number;
+  minimum_wait_minutes?: number;
+}
+
+export interface CreateAdminData {
+  email: string;
+  password: string;
+  business_id: string;
+}
+
+export interface BusinessesResponse {
+  businesses: SuperadminBusiness[];
+  pagination: Pagination;
 }
 
 // Dashboard types
