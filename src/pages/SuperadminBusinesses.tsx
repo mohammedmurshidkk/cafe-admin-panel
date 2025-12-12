@@ -81,10 +81,11 @@ const SuperadminBusinesses = () => {
     }
   };
 
-  const handleCreateAdmin = async (email: string, password: string) => {
+  const handleCreateAdmin = async (name: string, email: string, password: string) => {
     if (!newBusinessForAdmin) return;
     try {
       await createAdmin({ 
+        name,
         email, 
         password, 
         business_id: newBusinessForAdmin.id 

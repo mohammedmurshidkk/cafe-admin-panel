@@ -25,11 +25,6 @@ export const BusinessFormModal = ({
     phone: '',
     address: '',
     is_active: true,
-    supports_delivery: true,
-    supports_takeaway: true,
-    delivery_fee: 0,
-    free_delivery_above: 0,
-    minimum_wait_minutes: 30,
   });
 
   useEffect(() => {
@@ -39,11 +34,6 @@ export const BusinessFormModal = ({
         phone: business.phone,
         address: business.address || '',
         is_active: business.is_active,
-        supports_delivery: business.supports_delivery,
-        supports_takeaway: business.supports_takeaway,
-        delivery_fee: business.delivery_fee || 0,
-        free_delivery_above: business.free_delivery_above || 0,
-        minimum_wait_minutes: business.minimum_wait_minutes || 30,
       });
     } else {
       setFormData({
@@ -51,11 +41,6 @@ export const BusinessFormModal = ({
         phone: '',
         address: '',
         is_active: true,
-        supports_delivery: true,
-        supports_takeaway: true,
-        delivery_fee: 0,
-        free_delivery_above: 0,
-        minimum_wait_minutes: 30,
       });
     }
   }, [business, isOpen]);
@@ -71,7 +56,7 @@ export const BusinessFormModal = ({
       title={business ? 'Edit Business' : 'Create Business'}
       onSubmit={handleSubmit}
       isLoading={isLoading}
-      submitLabel={business ? 'Update' : 'Create'}
+      submitLabel={business ? 'Update' : 'Next: Create Admin'}
     >
       <div className="space-y-4">
         <div className="space-y-2">
@@ -94,6 +79,9 @@ export const BusinessFormModal = ({
             placeholder="+91 98765 43210"
             required
           />
+          <p className="text-xs text-muted-foreground">
+            WhatsApp registered phone number with country code
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -106,7 +94,7 @@ export const BusinessFormModal = ({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        {business && (
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
             <Label htmlFor="is_active" className="cursor-pointer">Active</Label>
             <Switch
@@ -115,65 +103,7 @@ export const BusinessFormModal = ({
               onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
             />
           </div>
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-            <Label htmlFor="supports_delivery" className="cursor-pointer">Delivery</Label>
-            <Switch
-              id="supports_delivery"
-              checked={formData.supports_delivery}
-              onCheckedChange={(checked) => setFormData({ ...formData, supports_delivery: checked })}
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-          <Label htmlFor="supports_takeaway" className="cursor-pointer">Takeaway</Label>
-          <Switch
-            id="supports_takeaway"
-            checked={formData.supports_takeaway}
-            onCheckedChange={(checked) => setFormData({ ...formData, supports_takeaway: checked })}
-          />
-        </div>
-
-        {formData.supports_delivery && (
-          <div className="space-y-4 p-4 border border-border rounded-lg">
-            <h4 className="font-medium text-sm">Delivery Settings</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="delivery_fee">Delivery Fee</Label>
-                <Input
-                  id="delivery_fee"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.delivery_fee}
-                  onChange={(e) => setFormData({ ...formData, delivery_fee: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="free_delivery_above">Free Delivery Above</Label>
-                <Input
-                  id="free_delivery_above"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.free_delivery_above}
-                  onChange={(e) => setFormData({ ...formData, free_delivery_above: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-            </div>
-          </div>
         )}
-
-        <div className="space-y-2">
-          <Label htmlFor="minimum_wait_minutes">Minimum Wait Time (minutes)</Label>
-          <Input
-            id="minimum_wait_minutes"
-            type="number"
-            min="0"
-            value={formData.minimum_wait_minutes}
-            onChange={(e) => setFormData({ ...formData, minimum_wait_minutes: parseInt(e.target.value) || 0 })}
-          />
-        </div>
       </div>
     </FormModal>
   );
