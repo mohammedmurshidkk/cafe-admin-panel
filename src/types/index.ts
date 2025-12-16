@@ -269,3 +269,25 @@ export interface SuccessResponse {
 export interface ErrorResponse {
   error: string;
 }
+
+// Notification types
+export type NotificationType = 'customer_image' | 'new_order' | 'ai_error';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  customer_phone: string | null;
+  message: string;
+  image_id: string | null;
+  read: boolean;
+  created_at: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  pagination: Pagination;
+}
+
+export interface UnreadCountResponse {
+  count: number;
+}
