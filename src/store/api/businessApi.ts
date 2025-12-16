@@ -19,7 +19,7 @@ interface UpdateBusinessData {
 }
 
 interface OutletData {
-  name: string;
+  outlet_name: string;
   address: string;
   phone: string;
   is_active?: boolean;

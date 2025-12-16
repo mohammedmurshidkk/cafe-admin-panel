@@ -1,8 +1,15 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, PlusCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  PlusCircle,
+  ChevronDown,
+  ChevronRight,
+  Link2,
+} from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { FormModal } from '@/components/ui/FormModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -10,26 +17,23 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { 
+import {
   useGetAddonGroupsQuery,
   useCreateAddonGroupMutation,
   useDeleteAddonGroupMutation,
   useCreateAddonMutation,
   useUpdateAddonMutation,
-  useDeleteAddonMutation
+  useDeleteAddonMutation,
 } from '@/store/api/addonsApi';
+import { useGetCategoriesQuery } from '@/store/api/categoriesApi';
+import { CategoryAddonLinker } from '@/components/addons/CategoryAddonLinker';
 import { AddonGroup, Addon } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
@@ -40,21 +44,32 @@ const Addons = () => {
   const [isAddonFormOpen, setIsAddonFormOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [editingAddon, setEditingAddon] = useState<Addon | null>(null);
-  const [addonData, setAddonData] = useState({ name: '', price: 0, group_id: '' });
+  const [addonData, setAddonData] = useState({
+    name: '',
+    price: 0,
+    group_id: '',
+    description: '',
+  });
   const [deleteGroup, setDeleteGroup] = useState<AddonGroup | null>(null);
   const [deleteAddon, setDeleteAddon] = useState<Addon | null>(null);
 
   const { data, isLoading } = useGetAddonGroupsQuery();
-  const [createGroup, { isLoading: isCreatingGroup }] = useCreateAddonGroupMutation();
-  const [deleteGroupMutation, { isLoading: isDeletingGroup }] = useDeleteAddonGroupMutation();
-  const [createAddon, { isLoading: isCreatingAddon }] = useCreateAddonMutation();
-  const [updateAddon, { isLoading: isUpdatingAddon }] = useUpdateAddonMutation();
-  const [deleteAddonMutation, { isLoading: isDeletingAddon }] = useDeleteAddonMutation();
+  const { data: categoriesData } = useGetCategoriesQuery();
+  const [createGroup, { isLoading: isCreatingGroup }] =
+    useCreateAddonGroupMutation();
+  const [deleteGroupMutation, { isLoading: isDeletingGroup }] =
+    useDeleteAddonGroupMutation();
+  const [createAddon, { isLoading: isCreatingAddon }] =
+    useCreateAddonMutation();
+  const [updateAddon, { isLoading: isUpdatingAddon }] =
+    useUpdateAddonMutation();
+  const [deleteAddonMutation, { isLoading: isDeletingAddon }] =
+    useDeleteAddonMutation();
 
   const toggleGroup = (groupId: string) => {
-    setExpandedGroups(prev => 
-      prev.includes(groupId) 
-        ? prev.filter(id => id !== groupId)
+    setExpandedGroups((prev) =>
+      prev.includes(groupId)
+        ? prev.filter((id) => id !== groupId)
         : [...prev, groupId]
     );
   };
@@ -62,10 +77,20 @@ const Addons = () => {
   const openAddonForm = (groupId?: string, addon?: Addon) => {
     if (addon) {
       setEditingAddon(addon);
-      setAddonData({ name: addon.name, price: addon.price, group_id: groupId || '' });
+      setAddonData({
+        name: addon.name,
+        price: addon.price,
+        group_id: groupId || '',
+        description: addon.description || '',
+      });
     } else {
       setEditingAddon(null);
-      setAddonData({ name: '', price: 0, group_id: groupId || '' });
+      setAddonData({
+        name: '',
+        price: 0,
+        group_id: groupId || '',
+        description: '',
+      });
     }
     setIsAddonFormOpen(true);
   };
@@ -86,20 +111,21 @@ const Addons = () => {
     e.preventDefault();
     try {
       if (editingAddon) {
-        await updateAddon({ 
-          id: editingAddon.id, 
-          name: addonData.name, 
+        await updateAddon({
+          id: editingAddon.id,
+          name: addonData.name,
           category: addonData.group_id,
-          price: addonData.price 
+          price: addonData.price,
+          description: addonData.description,
         }).unwrap();
         toast.success('Addon updated');
       } else {
-
         const finalData = {
-          ...addonData,
-          category: addonData.group_id
-        }
-
+          name: addonData.name,
+          price: addonData.price,
+          category: addonData.group_id,
+          description: addonData.description,
+        };
         await createAddon(finalData).unwrap();
         toast.success('Addon created');
       }
@@ -111,7 +137,11 @@ const Addons = () => {
 
   const handleToggleAddon = async (addon: Addon) => {
     try {
-      await updateAddon({ id: addon.id, is_available: !addon.is_available }).unwrap();
+      await updateAddon({
+        id: addon.id,
+        description: addon.description,
+        is_available: !addon.is_available,
+      }).unwrap();
     } catch (error) {
       toast.error('Failed to update addon');
     }
@@ -141,8 +171,8 @@ const Addons = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader 
-        title="Addons" 
+      <PageHeader
+        title="Addons"
         description="Manage addon groups and individual addons"
         action={
           <div className="flex gap-2">
@@ -158,121 +188,192 @@ const Addons = () => {
         }
       />
 
-      {/* Addon Groups */}
-      {isLoading ? (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-24 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : data?.groups?.length ? (
-        <div className="space-y-4">
-          {data.groups.map((group) => (
-            <Collapsible
-              key={group.id}
-              open={expandedGroups.includes(group.id)}
-              onOpenChange={() => toggleGroup(group.id)}
-            >
-              <div className="card-warm">
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      {expandedGroups.includes(group.id) ? (
-                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                      )}
-                      <div>
-                        <p className="font-semibold">{group.name}</p>
-                        <p className="text-sm text-muted-foreground">{group.addons.length} addons</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openAddonForm(group.id);
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteGroup(group);
-                        }}
-                        className="text-destructive hover:text-destructive"
-                        disabled={group.addons.length > 0}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CollapsibleTrigger>
+      {/* Tabs */}
+      <Tabs defaultValue="groups" className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="groups">Addon Groups</TabsTrigger>
+          <TabsTrigger value="links">Category Links</TabsTrigger>
+        </TabsList>
 
-                <CollapsibleContent>
-                  <div className="border-t border-border">
-                    {group.addons.length > 0 ? (
-                      group.addons.map((addon) => (
-                        <div 
-                          key={addon.id}
-                          className="flex items-center justify-between px-4 py-3 pl-12 hover:bg-muted/30 transition-colors"
-                        >
-                          <div className="flex items-center gap-4">
-                            <Switch
-                              checked={addon.is_available}
-                              onCheckedChange={() => handleToggleAddon(addon)}
-                            />
+        {/* Addon Groups Tab */}
+        <TabsContent value="groups" className="space-y-4 mt-6">
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : data?.groups?.length ? (
+            <div className="space-y-4">
+              {data.groups.map((group) => (
+                <Collapsible
+                  key={group.id}
+                  open={expandedGroups.includes(group.id)}
+                  onOpenChange={() => toggleGroup(group.id)}
+                >
+                  <div className="card-warm">
+                    <CollapsibleTrigger asChild>
+                      <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-3">
+                          {expandedGroups.includes(group.id) ? (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                          )}
+                          <div>
+                            <p className="font-semibold">{group.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {group.addons.length} addons
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openAddonForm(group.id);
+                            }}
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteGroup(group);
+                            }}
+                            className="text-destructive hover:text-destructive"
+                            disabled={group.addons.length > 0}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CollapsibleTrigger>
+
+                    <CollapsibleContent>
+                      <div className="border-t border-border">
+                        {group.addons.length > 0 ? (
+                          group.addons.map((addon) => (
+                            <div
+                              key={addon.id}
+                              className="flex items-center justify-between px-4 py-3 pl-12 hover:bg-muted/30 transition-colors"
+                            >
+                              <div className="flex items-center gap-4">
+                                <Switch
+                                  checked={addon.is_available}
+                                  onCheckedChange={() =>
+                                    handleToggleAddon(addon)
+                                  }
+                                />
+                                <div>
+                                  <p className="font-medium">{addon.name}</p>
+                                  <p className="text-sm text-primary font-semibold">
+                                    {formatCurrency(addon.price)}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openAddonForm(group.id, addon)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDeleteAddon(addon)}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-center py-6 text-muted-foreground">
+                            No addons in this group
+                          </p>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={PlusCircle}
+              title="No addon groups"
+              description="Create your first addon group to get started"
+              action={{
+                label: 'Add Group',
+                onClick: () => setIsGroupFormOpen(true),
+              }}
+            />
+          )}
+        </TabsContent>
+
+        {/* Category Links Tab */}
+        <TabsContent value="links" className="space-y-4 mt-6">
+          {isLoading ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-24 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : categoriesData?.categories?.length ? (
+            <div className="space-y-4">
+              {categoriesData.categories.map((category) => {
+                const allAddons = data?.groups?.flatMap((g) => g.addons) || [];
+
+                return (
+                  <Collapsible key={category.id}>
+                    <div className="card-warm">
+                      <CollapsibleTrigger asChild>
+                        <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <ChevronRight className="h-5 w-5 text-muted-foreground" />
                             <div>
-                              <p className="font-medium">{addon.name}</p>
-                              <p className="text-sm text-primary font-semibold">
-                                {formatCurrency(addon.price)}
+                              <p className="font-semibold">{category.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                Link addons to suggest when customers order from
+                                this category
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => openAddonForm(group.id, addon)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => setDeleteAddon(addon)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <Link2 className="h-5 w-5 text-muted-foreground" />
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-center py-6 text-muted-foreground">
-                        No addons in this group
-                      </p>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </div>
-            </Collapsible>
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          icon={PlusCircle}
-          title="No addon groups"
-          description="Create your first addon group to get started"
-          action={{ label: 'Add Group', onClick: () => setIsGroupFormOpen(true) }}
-        />
-      )}
+                      </CollapsibleTrigger>
+
+                      <CollapsibleContent>
+                        <div className="border-t border-border p-4">
+                          <CategoryAddonLinker
+                            categoryId={category.id}
+                            allAddons={allAddons}
+                          />
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Link2}
+              title="No categories"
+              description="Create menu categories first to link addons"
+            />
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Group Form Modal */}
       <FormModal
@@ -293,7 +394,11 @@ const Addons = () => {
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => setIsGroupFormOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsGroupFormOpen(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" variant="gradient" disabled={isCreatingGroup}>
@@ -315,7 +420,9 @@ const Addons = () => {
             <Input
               id="addonName"
               value={addonData.name}
-              onChange={(e) => setAddonData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setAddonData((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder="e.g., Extra Cheese"
               required
             />
@@ -329,35 +436,57 @@ const Addons = () => {
               min="0"
               step="0.01"
               value={addonData.price}
-              onChange={(e) => setAddonData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setAddonData((prev) => ({
+                  ...prev,
+                  price: parseFloat(e.target.value) || 0,
+                }))
+              }
               required
             />
           </div>
 
-          {!editingAddon && (
-            <div className="space-y-2">
-              <Label htmlFor="addonGroup">Group</Label>
-              <Select 
-                value={addonData.group_id}
-                onValueChange={(v) => setAddonData(prev => ({ ...prev, group_id: v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select group" />
-                </SelectTrigger>
-                <SelectContent>
-                  {data?.groups.map((group) => (
-                    <SelectItem key={group.name} value={group.name}>{group.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="addonDescription">Description (Optional)</Label>
+            <Textarea
+              id="addonDescription"
+              value={addonData.description}
+              onChange={(e) =>
+                setAddonData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
+              placeholder="Brief description of this addon"
+              rows={2}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="group">Group</Label>
+            <Input
+              id="group"
+              placeholder="Group name"
+              value={addonData.group_id}
+              onChange={(e) =>
+                setAddonData((prev) => ({ ...prev, group_id: e.target.value }))
+              }
+            />
+          </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => setIsAddonFormOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsAddonFormOpen(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="gradient" disabled={isCreatingAddon || isUpdatingAddon}>
+            <Button
+              type="submit"
+              variant="gradient"
+              disabled={isCreatingAddon || isUpdatingAddon}
+            >
               {editingAddon ? 'Update' : 'Create'}
             </Button>
           </div>

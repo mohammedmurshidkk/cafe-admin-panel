@@ -33,14 +33,14 @@ export const BusinessFormModal = ({
         name: business.name,
         phone: business.phone,
         address: business.address || '',
-        is_active: business.is_active,
+        is_active: business?.is_active
       });
     } else {
       setFormData({
         name: '',
         phone: '',
         address: '',
-        is_active: true,
+        is_active: true,  
       });
     }
   }, [business, isOpen]);
@@ -75,7 +75,9 @@ export const BusinessFormModal = ({
           <Input
             id="phone"
             value={formData.phone}
-            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, phone: e.target.value })
+            }
             placeholder="+91 98765 43210"
             required
           />
@@ -89,18 +91,24 @@ export const BusinessFormModal = ({
           <Input
             id="address"
             value={formData.address}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, address: e.target.value })
+            }
             placeholder="Business address"
           />
         </div>
 
         {business && (
           <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-            <Label htmlFor="is_active" className="cursor-pointer">Active</Label>
+            <Label htmlFor="is_active" className="cursor-pointer">
+              Active
+            </Label>
             <Switch
               id="is_active"
               checked={formData.is_active}
-              onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, is_active: checked })
+              }
             />
           </div>
         )}

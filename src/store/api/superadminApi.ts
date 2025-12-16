@@ -26,7 +26,7 @@ export const superadminApi = apiSlice.injectEndpoints({
     }),
     toggleBusinessStatus: builder.mutation<SuccessResponse, { id: string; is_active: boolean }>({
       query: ({ id, is_active }) => ({
-        url: `/superadmin/businesses/${id}/status`,
+        url: `/superadmin/businesses/${id}/toggle-status`,
         method: 'PATCH',
         body: { is_active },
       }),
@@ -42,7 +42,7 @@ export const superadminApi = apiSlice.injectEndpoints({
     }),
     createBusinessAdmin: builder.mutation<SuccessResponse, CreateAdminData>({
       query: (data) => ({
-        url: '/superadmin/admins',
+        url: `/superadmin/businesses/${data?.business_id}/admins`,
         method: 'POST',
         body: data,
       }),

@@ -34,6 +34,9 @@ export interface SuperadminBusiness {
   minimum_wait_minutes?: number;
   admin_count: number;
   created_at: string;
+  admin_name: string
+  admin_email: string;
+  admin_password: string
 }
 
 export interface SuperadminBusinessFormData {
@@ -192,6 +195,7 @@ export interface Addon {
   id: string;
   name: string;
   price: number;
+  description?: string;
   is_available: boolean;
 }
 
@@ -205,14 +209,24 @@ export interface AddonGroupsResponse {
   groups: AddonGroup[];
 }
 
+export interface CategoryAddon {
+  addon_id: string;
+  category_id: string;
+  addon_name: string;
+  addon_price: number;
+}
+
+export interface CategoryAddonsResponse {
+  addons: CategoryAddon[];
+}
+
 // Business types
 export interface Outlet {
   id: string;
-  name: string;
+  outlet_name: string
   address: string;
   phone: string;
   is_active: boolean;
-  outlet_name?: string
 }
 
 export interface Business {
@@ -234,6 +248,7 @@ export interface Business {
   delivery_radius_km?: number;
   minimum_wait_minutes?: number;
   outlets: Outlet[];
+  phone?: string
 }
 
 export interface BusinessResponse {
