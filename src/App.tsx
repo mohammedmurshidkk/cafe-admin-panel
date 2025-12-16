@@ -13,6 +13,7 @@ import Menu from './pages/Menu';
 import Categories from './pages/Categories';
 import Addons from './pages/Addons';
 import CompanyProfile from './pages/CompanyProfile';
+import Notifications from './pages/Notifications';
 import SuperadminBusinesses from './pages/SuperadminBusinesses';
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/categories" element={<Categories />} />
             <Route path="/addons" element={<Addons />} />
             <Route path="/company" element={<CompanyProfile />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />
