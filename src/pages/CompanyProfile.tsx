@@ -94,7 +94,7 @@ const CompanyProfile = () => {
       await updateProfile({
         name: businessName,
         welcome_message: welcomeMessage,
-        thank_you_message: thankYouMessage,
+        closing_message: thankYouMessage,
         custom_ai_prompt: customAiPrompt,
         critical_message: criticalMessage,
         critical_message_enabled: criticalEnabled,
@@ -463,7 +463,7 @@ const CompanyProfile = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="thankyou">Thank You Message</Label>
+            <Label htmlFor="thankyou">Closing Message</Label>
             <Textarea
               id="thankyou"
               value={thankYouMessage}

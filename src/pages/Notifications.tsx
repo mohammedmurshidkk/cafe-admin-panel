@@ -49,7 +49,7 @@ const Notifications = () => {
   const [markAsRead] = useMarkAsReadMutation();
   const [markAllAsRead, { isLoading: isMarkingAll }] = useMarkAllAsReadMutation();
 
-  const notifications = data?.notifications || [];
+  const notifications = data?.data || [];
   const pagination = data?.pagination;
 
   const handleNotificationClick = async (notification: Notification) => {

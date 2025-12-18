@@ -10,9 +10,12 @@ interface HeaderProps {
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { user } = useAuth();
-  
+
   // Enable real-time notification updates
-  useNotificationSocket({ soundEnabled: false });
+  useNotificationSocket({
+    soundEnabled: true,
+    browserNotificationsEnabled: true,
+  });
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6 shadow-soft">
@@ -27,12 +30,14 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
         </Button>
         <div className="md:hidden flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">WA</span>
+            <span className="text-primary-foreground font-bold text-sm">
+              WA
+            </span>
           </div>
           <span className="font-display font-semibold">OrderBot</span>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-4">
         <NotificationBell />
         {user && (

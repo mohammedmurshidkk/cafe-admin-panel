@@ -59,7 +59,7 @@ const Orders = () => {
       key: 'id',
       header: 'Order ID',
       render: (order: Order) => (
-        <span className="font-mono font-medium">#{truncateId(order.id)}</span>
+        <span className="font-mono font-medium">{order?.order_number}</span>
       ),
     },
     {

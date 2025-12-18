@@ -4,7 +4,7 @@ import { Business, BusinessResponse, Outlet } from '@/types';
 interface UpdateBusinessData {
   name?: string;
   welcome_message?: string;
-  thank_you_message?: string;
+  closing_message?: string;
   custom_ai_prompt?: string;
   critical_message?: string;
   critical_message_enabled?: boolean;

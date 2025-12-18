@@ -103,7 +103,7 @@ export const SessionDetailModal = ({
                       key={idx} 
                       className="bg-background rounded-full px-3 py-1 text-xs border border-border"
                     >
-                      {item.name} × {item.quantity}
+                      {item.item_name} × {item.quantity}
                     </span>
                   ))}
                 </div>

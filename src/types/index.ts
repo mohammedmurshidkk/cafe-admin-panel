@@ -71,7 +71,7 @@ export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'completed' | 
 export type FulfillmentType = 'delivery' | 'takeaway';
 
 export interface OrderItem {
-  name: string;
+  item_name: string;
   quantity: number;
   unit_price: number;
   notes?: string;
@@ -87,6 +87,7 @@ export interface Order {
   fulfillment_type?: FulfillmentType;
   fulfillment_datetime?: string;
   fulfillment_location?: string;
+  order_number: string
 }
 
 export interface OrdersResponse {
@@ -284,10 +285,11 @@ export interface Notification {
 }
 
 export interface NotificationsResponse {
-  notifications: Notification[];
+  data: Notification[];
   pagination: Pagination;
 }
 
 export interface UnreadCountResponse {
   count: number;
+  data: Notification[];
 }

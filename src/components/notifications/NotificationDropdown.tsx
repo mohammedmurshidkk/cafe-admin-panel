@@ -45,7 +45,7 @@ export const NotificationDropdown = () => {
     );
   }
 
-  const notifications = data?.notifications || [];
+  const notifications = data?.data || [];
 
   return (
     <div className="flex flex-col">
