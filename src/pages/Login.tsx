@@ -32,9 +32,11 @@ const Login = () => {
       <div className="w-full max-w-md animate-fade-in">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
-            <span className="text-primary-foreground font-bold text-2xl">WA</span>
-          </div>
+          <img
+            src="/appLogo.svg"
+            alt="Conversa"
+            className="w-16 h-16 mx-auto mb-4"
+          />
           <h1 className="text-3xl font-display font-bold">Conversa</h1>
           <p className="text-muted-foreground mt-2">WhatsApp AI Ordering System</p>
         </div>

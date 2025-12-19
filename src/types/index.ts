@@ -77,6 +77,7 @@ export type FulfillmentType = 'delivery' | 'takeaway';
 
 export interface OrderItem {
   item_name: string;
+  name?: string
   quantity: number;
   unit_price: number;
   notes?: string;
@@ -191,6 +192,7 @@ export interface CategoryFormData {
   image_url?: string | null;
   category_note?: string;
   custom_text_prompt?: string;
+  display_order?: number;
 }
 
 export interface CategoriesResponse {

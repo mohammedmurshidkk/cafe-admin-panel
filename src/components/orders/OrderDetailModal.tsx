@@ -24,7 +24,7 @@ export const OrderDetailModal = ({
     <FormModal
       open={!!order}
       onOpenChange={onClose}
-      title={`Order #${truncateId(order.id)}`}
+      title={`Order #${order?.order_number}`}
       description={formatPhone(order.customer_phone)}
     >
       <div className="space-y-5">
@@ -84,11 +84,25 @@ export const OrderDetailModal = ({
             {order.items.map((item, idx) => (
               <div key={idx} className="flex justify-between items-start py-3 border-b border-gray-100 last:border-0 last:pb-0">
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">{item.item_name}</p>
+                  <p className="font-medium text-gray-900">{item.name}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-medium">{item.quantity}</span>
                     <span className="text-sm text-muted-foreground">× {formatCurrency(item.unit_price)}</span>
+                    {(item as any).size_or_weight && (
+                      <span className="text-xs text-muted-foreground">({(item as any).size_or_weight})</span>
+                    )}
                   </div>
+                  {/* Addons */}
+                  {(item as any).addons && (item as any).addons.length > 0 && (
+                    <div className="mt-2 pl-2 border-l-2 border-gray-200 space-y-1">
+                      {(item as any).addons.map((addon: any, addonIdx: number) => (
+                        <div key={addonIdx} className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>+ {addon.addon_name} × {addon.quantity}</span>
+                          <span>{formatCurrency(addon.line_total)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {item.notes && (
                     <p className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded mt-2 inline-block">{item.notes}</p>
                   )}

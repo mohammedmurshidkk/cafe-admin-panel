@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SessionDetail } from '@/types';
-import { formatDateTime, formatPhone, formatCurrency } from '@/utils/formatters';
+import { formatDateTime, formatPhone } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
 import {
   MessageSquare,
@@ -139,16 +138,27 @@ export const SessionDetailModal = ({
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {sessionDetail.session.items.map((item, idx) => (
-                    <span
+                    <div
                       key={idx}
-                      className="bg-background rounded-full px-3 py-1 text-xs border border-border"
+                      className="bg-background rounded-lg px-3 py-2 text-xs border border-border"
                     >
-                      {item.item_name}
-                      {(item as any).size_or_weight && (
-                        <span className="text-muted-foreground ml-1">({(item as any).size_or_weight})</span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">{item.item_name || (item as any).name}</span>
+                        {(item as any).size_or_weight && (
+                          <span className="text-muted-foreground">({(item as any).size_or_weight})</span>
+                        )}
+                        <span className="text-muted-foreground">× {item.quantity}</span>
+                      </div>
+                      {(item as any).addons && (item as any).addons.length > 0 && (
+                        <div className="mt-1 pl-2 border-l border-border space-y-0.5">
+                          {(item as any).addons.map((addon: any, addonIdx: number) => (
+                            <div key={addonIdx} className="text-muted-foreground">
+                              + {addon.addon_name} × {addon.quantity}
+                            </div>
+                          ))}
+                        </div>
                       )}
-                      {' '}× {item.quantity}
-                    </span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -182,7 +192,7 @@ export const SessionDetailModal = ({
                           "relative max-w-[75%] px-3 py-2 rounded-lg shadow-sm",
                           isIncoming 
                             ? "bg-background border border-border rounded-tl-none" 
-                            : "bg-secondary/20 text-foreground rounded-tr-none"
+                            : "bg-secondary/10 text-foreground rounded-tr-none"
                         )}
                       >
                         {/* Message tail */}
@@ -191,7 +201,7 @@ export const SessionDetailModal = ({
                             "absolute top-0 w-3 h-3",
                             isIncoming
                               ? "-left-3 border-t border-l border-border bg-background"
-                              : "-right-3 bg-secondary/20"
+                              : "-right-3 bg-secondary/10"
                           )}
                           style={{
                             clipPath: isIncoming 

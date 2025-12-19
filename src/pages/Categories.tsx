@@ -24,6 +24,7 @@ const defaultFormData: CategoryFormData = {
   description: '',
   custom_text_prompt: '',
   category_note: '',
+  display_order: 0,
 };
 
 const Categories = () => {
@@ -55,6 +56,7 @@ const Categories = () => {
         description: category.description || '',
         custom_text_prompt: category.custom_text_prompt || '',
         category_note: (category as any).category_note || '',
+        display_order: (category as any).display_order || 0,
       });
       setImagePreview(category.image_url || null);
     } else {
@@ -211,6 +213,21 @@ const Categories = () => {
               placeholder="e.g., Cakes, Pastries, Beverages"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="display_order">Display Order</Label>
+            <Input
+              id="display_order"
+              type="number"
+              min={0}
+              value={formData.display_order || 0}
+              onChange={(e) => setFormData(prev => ({ ...prev, display_order: parseInt(e.target.value) || 0 }))}
+              placeholder="0"
+            />
+            <p className="text-xs text-muted-foreground">
+              Lower numbers appear first. Categories with the same order are sorted alphabetically.
+            </p>
           </div>
 
           <div className="space-y-2">

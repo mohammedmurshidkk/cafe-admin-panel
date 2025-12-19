@@ -29,11 +29,11 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
           <Menu className="h-5 w-5" />
         </Button>
         <div className="md:hidden flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">
-              WA
-            </span>
-          </div>
+          <img
+            src="/appLogo.svg"
+            alt="Conversa"
+            className="w-8 h-8"
+          />
           <span className="font-display font-semibold">Conversa</span>
         </div>
       </div>
