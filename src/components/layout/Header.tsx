@@ -34,7 +34,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
               WA
             </span>
           </div>
-          <span className="font-display font-semibold">OrderBot</span>
+          <span className="font-display font-semibold">Conversa</span>
         </div>
       </div>
 

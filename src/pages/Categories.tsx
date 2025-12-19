@@ -23,6 +23,7 @@ const defaultFormData: CategoryFormData = {
   name: '',
   description: '',
   custom_text_prompt: '',
+  category_note: '',
 };
 
 const Categories = () => {
@@ -53,6 +54,7 @@ const Categories = () => {
         name: category.name,
         description: category.description || '',
         custom_text_prompt: category.custom_text_prompt || '',
+        category_note: (category as any).category_note || '',
       });
       setImagePreview(category.image_url || null);
     } else {
@@ -221,7 +223,7 @@ const Categories = () => {
             />
           </div>
 
-          {/* Image Upload */}
+          {/* Image Upload - Hidden
           <div className="space-y-2">
             <Label>Image</Label>
             <div className="flex items-center gap-4">
@@ -242,6 +244,18 @@ const Categories = () => {
                 {imagePreview ? 'Change' : 'Upload'}
               </Button>
             </div>
+          </div>
+          */}
+
+          <div className="space-y-2">
+            <Label htmlFor="category_note">Custom Note</Label>
+            <Textarea
+              id="category_note"
+              value={formData.category_note || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, category_note: e.target.value }))}
+              placeholder="Add a custom note for this category..."
+              rows={3}
+            />
           </div>
 
           <div className="space-y-2">

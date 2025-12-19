@@ -27,81 +27,93 @@ export const OrderDetailModal = ({
       title={`Order #${truncateId(order.id)}`}
       description={formatPhone(order.customer_phone)}
     >
-      <div className="space-y-6">
-        {/* Order Info */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2 text-sm">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground">Created:</span>
-            <span className="font-medium">{formatDateTime(order.created_at)}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Status:</span>
-            <Badge variant={order.status}>{order.status}</Badge>
+      <div className="space-y-5">
+        {/* Order Info Card */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Created</p>
+                <p className="font-medium">{formatDateTime(order.created_at)}</p>
+              </div>
+            </div>
+            <Badge variant={order.status} className="text-sm px-3 py-1">{order.status}</Badge>
           </div>
         </div>
 
-        {/* Fulfillment Info */}
-        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            {order.fulfillment_type === 'delivery' ? (
-              <Truck className="h-5 w-5 text-primary" />
-            ) : (
-              <Store className="h-5 w-5 text-secondary" />
+        {/* Fulfillment Info Card */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3 mb-3">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${order.fulfillment_type === 'delivery' ? 'bg-blue-50' : 'bg-green-50'}`}>
+              {order.fulfillment_type === 'delivery' ? (
+                <Truck className="h-5 w-5 text-blue-600" />
+              ) : (
+                <Store className="h-5 w-5 text-green-600" />
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">Fulfillment</p>
+              <p className="font-semibold capitalize">{order.fulfillment_type || 'N/A'}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2 pl-[52px]">
+            {order.fulfillment_datetime && (
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span>{formatDateTime(order.fulfillment_datetime)}</span>
+              </div>
             )}
-            <span className="font-semibold capitalize">
-              {order.fulfillment_type || 'N/A'}
-            </span>
+
+            {order.fulfillment_location && (
+              <div className="flex items-start gap-2 text-sm">
+                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                <span>{order.fulfillment_location}</span>
+              </div>
+            )}
           </div>
-          
-          {order.fulfillment_datetime && (
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>{formatDateTime(order.fulfillment_datetime)}</span>
-            </div>
-          )}
-          
-          {order.fulfillment_location && (
-            <div className="flex items-start gap-2 text-sm">
-              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-              <span>{order.fulfillment_location}</span>
-            </div>
-          )}
         </div>
 
-        {/* Items */}
-        <div>
-          <h4 className="font-semibold mb-3">Items</h4>
-          <div className="space-y-2">
+        {/* Items Card */}
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <h4 className="font-semibold mb-4 text-sm uppercase tracking-wide text-muted-foreground">Order Items</h4>
+          <div className="space-y-3">
             {order.items.map((item, idx) => (
-              <div key={idx} className="flex justify-between py-2 border-b border-border last:border-0">
-                <div>
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+              <div key={idx} className="flex justify-between items-start py-3 border-b border-gray-100 last:border-0 last:pb-0">
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">{item.item_name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-medium">{item.quantity}</span>
+                    <span className="text-sm text-muted-foreground">× {formatCurrency(item.unit_price)}</span>
+                  </div>
                   {item.notes && (
-                    <p className="text-xs text-muted-foreground italic mt-1">{item.notes}</p>
+                    <p className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded mt-2 inline-block">{item.notes}</p>
                   )}
                 </div>
-                <p className="font-semibold">{formatCurrency(item.quantity * item.unit_price)}</p>
+                <p className="font-semibold text-gray-900">{formatCurrency(item.quantity * item.unit_price)}</p>
               </div>
             ))}
           </div>
-          <div className="flex justify-between pt-4 border-t border-border mt-4">
-            <p className="font-semibold">Total</p>
-            <p className="font-bold text-lg">{formatCurrency(order.total)}</p>
+          <div className="flex justify-between items-center pt-4 mt-4 border-t-2 border-gray-200">
+            <p className="font-semibold text-gray-600">Total</p>
+            <p className="font-bold text-xl text-primary">{formatCurrency(order.total)}</p>
           </div>
         </div>
 
-        {/* Status Update */}
+        {/* Status Update Card */}
         {onStatusChange && (
-          <div>
-            <h4 className="font-semibold mb-3">Update Status</h4>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <h4 className="font-semibold mb-4 text-sm uppercase tracking-wide text-muted-foreground">Update Status</h4>
             <div className="flex flex-wrap gap-2">
               {(['preparing', 'completed', 'cancelled'] as OrderStatus[]).map((status) => (
                 <Button
                   key={status}
                   variant={status === 'cancelled' ? 'destructive' : status === 'completed' ? 'success' : 'warning'}
                   size="sm"
+                  className="flex-1 min-w-[100px]"
                   disabled={isUpdating || order.status === status}
                   onClick={() => onStatusChange(order.id, status)}
                 >

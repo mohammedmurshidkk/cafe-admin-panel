@@ -5,19 +5,59 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SessionDetail } from '@/types';
 import { formatDateTime, formatPhone, formatCurrency } from '@/utils/formatters';
 import { cn } from '@/lib/utils';
-import { 
-  MessageSquare, 
-  Pause, 
-  Play, 
-  ShoppingCart, 
-  X,
-  Check,
+import {
+  MessageSquare,
+  Pause,
+  Play,
+  ShoppingCart,
   CheckCheck
 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
+
+// Parse WhatsApp-style formatting: *bold*, _italic_, ~strikethrough~
+const formatWhatsAppText = (text: string): React.ReactNode => {
+  if (!text) return text;
+
+  // Split by formatting patterns while preserving delimiters
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
+
+  // Pattern to match *bold*, _italic_, ~strikethrough~
+  const regex = /(\*[^*]+\*|_[^_]+_|~[^~]+~)/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    const matched = match[0];
+    const inner = matched.slice(1, -1);
+
+    if (matched.startsWith('*')) {
+      parts.push(<strong key={key++}>{inner}</strong>);
+    } else if (matched.startsWith('_')) {
+      parts.push(<em key={key++}>{inner}</em>);
+    } else if (matched.startsWith('~')) {
+      parts.push(<s key={key++}>{inner}</s>);
+    }
+
+    lastIndex = regex.lastIndex;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+};
 
 interface SessionDetailModalProps {
   open: boolean;
@@ -38,7 +78,7 @@ export const SessionDetailModal = ({
 }: SessionDetailModalProps) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:bg-background [&>button]:rounded-full [&>button]:shadow-md [&>button]:border [&>button]:border-border">
         {isLoading ? (
           <div className="p-6 space-y-4">
             <Skeleton className="h-16 w-full" />
@@ -74,7 +114,7 @@ export const SessionDetailModal = ({
                     size="sm"
                     onClick={() => onToggleAi(!sessionDetail.session.ai_paused)}
                     disabled={isToggling}
-                    className="gap-2"
+                    className="gap-2 mr-8"
                   >
                     {sessionDetail.session.ai_paused ? (
                       <>
@@ -99,11 +139,15 @@ export const SessionDetailModal = ({
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {sessionDetail.session.items.map((item, idx) => (
-                    <span 
-                      key={idx} 
+                    <span
+                      key={idx}
                       className="bg-background rounded-full px-3 py-1 text-xs border border-border"
                     >
-                      {item.item_name} × {item.quantity}
+                      {item.item_name}
+                      {(item as any).size_or_weight && (
+                        <span className="text-muted-foreground ml-1">({(item as any).size_or_weight})</span>
+                      )}
+                      {' '}× {item.quantity}
                     </span>
                   ))}
                 </div>
@@ -158,7 +202,7 @@ export const SessionDetailModal = ({
                         
                         {/* Message content */}
                         <p className="text-sm whitespace-pre-wrap break-words">
-                          {msg.content}
+                          {formatWhatsAppText(msg.content)}
                         </p>
                         
                         {/* Timestamp and read status */}

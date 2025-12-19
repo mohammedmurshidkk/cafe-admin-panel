@@ -179,10 +179,12 @@ const Addons = () => {
         description="Manage addon groups and individual addons"
         action={
           <div className="flex gap-2">
+            {/* Add Group button hidden
             <Button variant="outline" onClick={() => setIsGroupFormOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Group
             </Button>
+            */}
             <Button variant="gradient" onClick={() => openAddonForm()}>
               <Plus className="h-4 w-4 mr-2" />
               Add Addon
@@ -438,11 +440,11 @@ const Addons = () => {
               type="number"
               min="0"
               step="0.01"
-              value={addonData.price}
+              value={addonData.price || ''}
               onChange={(e) =>
                 setAddonData((prev) => ({
                   ...prev,
-                  price: parseFloat(e.target.value) || 0,
+                  price: e.target.value === '' ? 0 : parseFloat(e.target.value),
                 }))
               }
               required

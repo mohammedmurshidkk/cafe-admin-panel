@@ -34,9 +34,9 @@ export interface SuperadminBusiness {
   minimum_wait_minutes?: number;
   admin_count: number;
   created_at: string;
-  admin_name: string
+  admin_name: string;
   admin_email: string;
-  admin_password: string
+  admin_password: string;
 }
 
 export interface SuperadminBusinessFormData {
@@ -67,7 +67,12 @@ export interface DashboardStats {
 }
 
 // Order types
-export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'completed' | 'cancelled';
+export type OrderStatus =
+  | 'pending'
+  | 'confirmed'
+  | 'preparing'
+  | 'completed'
+  | 'cancelled';
 export type FulfillmentType = 'delivery' | 'takeaway';
 
 export interface OrderItem {
@@ -87,7 +92,7 @@ export interface Order {
   fulfillment_type?: FulfillmentType;
   fulfillment_datetime?: string;
   fulfillment_location?: string;
-  order_number: string
+  order_number: string;
 }
 
 export interface OrdersResponse {
@@ -150,7 +155,7 @@ export interface MenuItem {
   requires_date: boolean;
   is_available: boolean;
   special_notes?: string;
-  price?: number
+  price?: number;
 }
 
 export interface MenuItemFormData {
@@ -184,6 +189,7 @@ export interface CategoryFormData {
   name: string;
   description?: string;
   image_url?: string | null;
+  category_note?: string;
   custom_text_prompt?: string;
 }
 
@@ -223,7 +229,7 @@ export interface CategoryAddonsResponse {
 // Business types
 export interface Outlet {
   id: string;
-  outlet_name: string
+  outlet_name: string;
   address: string;
   phone: string;
   is_active: boolean;
@@ -248,7 +254,7 @@ export interface Business {
   delivery_radius_km?: number;
   minimum_wait_minutes?: number;
   outlets: Outlet[];
-  phone?: string
+  phone?: string;
 }
 
 export interface BusinessResponse {

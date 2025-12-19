@@ -451,8 +451,8 @@ const Menu = () => {
                 type="number"
                 min="0"
                 step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                value={formData.price || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value === '' ? 0 : parseFloat(e.target.value) }))}
                 required
               />
             </div>
@@ -496,6 +496,7 @@ const Menu = () => {
             </div>
           )}
 
+          {/* Hidden fields - Is Customizable, Requires Date, Special Notes
           <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -524,6 +525,7 @@ const Menu = () => {
               onChange={(e) => setFormData(prev => ({ ...prev, special_notes: e.target.value }))}
             />
           </div>
+          */}
 
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>

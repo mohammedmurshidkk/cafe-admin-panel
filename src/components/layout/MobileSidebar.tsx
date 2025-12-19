@@ -47,7 +47,7 @@ export const MobileSidebar = ({ open, onClose }: MobileSidebarProps) => {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-sm">WA</span>
             </div>
-            <span className="font-display font-semibold text-sidebar-foreground">OrderBot</span>
+            <span className="font-display font-semibold text-sidebar-foreground">Conversa</span>
           </SheetTitle>
         </SheetHeader>
 

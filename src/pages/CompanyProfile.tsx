@@ -325,6 +325,7 @@ const CompanyProfile = () => {
           </div>
         </div>
 
+        {/* Delivery Settings - Hidden
         {supportsDelivery && (
           <div className="mt-6 p-4 border border-border rounded-lg space-y-4">
             <h4 className="font-medium text-sm flex items-center gap-2">
@@ -368,7 +369,9 @@ const CompanyProfile = () => {
             </div>
           </div>
         )}
+        */}
 
+        {/* Minimum Wait Time - Hidden
         <div className="mt-6 space-y-2">
           <Label htmlFor="minimumWait">Minimum Wait Time (minutes)</Label>
           <Input
@@ -383,6 +386,7 @@ const CompanyProfile = () => {
             Minimum preparation time before order can be ready
           </p>
         </div>
+        */}
       </div>
 
       {/* Outlets */}
@@ -441,7 +445,7 @@ const CompanyProfile = () => {
         )}
       </div>
 
-      {/* Message Templates */}
+      {/* Message Templates - Hidden
       <div className="card-warm p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -474,6 +478,7 @@ const CompanyProfile = () => {
           </div>
         </div>
       </div>
+      */}
 
       {/* Custom AI Prompt */}
       <div className="card-warm p-6">
