@@ -201,7 +201,6 @@ export interface Addon {
 }
 
 export interface AddonGroup {
-  id: string;
   name: string;
   addons: Addon[];
 }

@@ -76,6 +76,7 @@ const Addons = () => {
 
   const openAddonForm = (groupId?: string, addon?: Addon) => {
     if (addon) {
+      console.log('####### groupId', groupId, addon, data)
       setEditingAddon(addon);
       setAddonData({
         name: addon.name,
@@ -106,6 +107,8 @@ const Addons = () => {
       toast.error('Failed to create group');
     }
   };
+
+  console.log('##### editingAddon', groupName)
 
   const handleSubmitAddon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +153,7 @@ const Addons = () => {
   const handleDeleteGroup = async () => {
     if (!deleteGroup) return;
     try {
-      await deleteGroupMutation(deleteGroup.id).unwrap();
+      await deleteGroupMutation(deleteGroup.name).unwrap();
       toast.success('Group deleted');
       setDeleteGroup(null);
     } catch (error) {
@@ -207,15 +210,15 @@ const Addons = () => {
             <div className="space-y-4">
               {data.groups.map((group) => (
                 <Collapsible
-                  key={group.id}
-                  open={expandedGroups.includes(group.id)}
-                  onOpenChange={() => toggleGroup(group.id)}
+                  key={group.name}
+                  open={expandedGroups.includes(group.name)}
+                  onOpenChange={() => toggleGroup(group.name)}
                 >
                   <div className="card-warm">
                     <CollapsibleTrigger asChild>
                       <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors">
                         <div className="flex items-center gap-3">
-                          {expandedGroups.includes(group.id) ? (
+                          {expandedGroups.includes(group.name) ? (
                             <ChevronDown className="h-5 w-5 text-muted-foreground" />
                           ) : (
                             <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -233,7 +236,7 @@ const Addons = () => {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              openAddonForm(group.id);
+                              openAddonForm(group.name);
                             }}
                           >
                             <Plus className="h-4 w-4 mr-1" />
@@ -281,7 +284,7 @@ const Addons = () => {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => openAddonForm(group.id, addon)}
+                                  onClick={() => openAddonForm(group.name, addon)}
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
@@ -462,17 +465,22 @@ const Addons = () => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="group">Group</Label>
-            <Input
-              id="group"
-              placeholder="Group name"
-              value={addonData.group_id}
-              onChange={(e) =>
-                setAddonData((prev) => ({ ...prev, group_id: e.target.value }))
-              }
-            />
-          </div>
+          {!editingAddon && (
+            <div className="space-y-2">
+              <Label htmlFor="group">Group</Label>
+              <Input
+                id="group"
+                placeholder="Group name"
+                value={addonData.group_id}
+                onChange={(e) =>
+                  setAddonData((prev) => ({
+                    ...prev,
+                    group_id: e.target.value,
+                  }))
+                }
+              />
+            </div>
+          )} 
 
           <div className="flex justify-end gap-3 pt-4">
             <Button
