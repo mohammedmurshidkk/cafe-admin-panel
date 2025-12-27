@@ -12,11 +12,11 @@ interface OrderDetailModalProps {
   isUpdating?: boolean;
 }
 
-export const OrderDetailModal = ({ 
-  order, 
-  onClose, 
+export const OrderDetailModal = ({
+  order,
+  onClose,
   onStatusChange,
-  isUpdating = false 
+  isUpdating = false
 }: OrderDetailModalProps) => {
   if (!order) return null;
 
@@ -92,6 +92,21 @@ export const OrderDetailModal = ({
                       <span className="text-xs text-muted-foreground">({(item as any).size_or_weight})</span>
                     )}
                   </div>
+                  {/* Custom Text with Prompt */}
+                  {((item as any).custom_text_prompt || (item as any).custom_text) && (
+                    <div className="text-xs bg-amber-50 px-2 py-1.5 rounded mt-2 border border-amber-200">
+                      {(item as any).custom_text_prompt && (
+                        <p className="text-amber-700 font-medium">
+                          Q: {(item as any).custom_text_prompt}
+                        </p>
+                      )}
+                      {(item as any).custom_text && (
+                        <p className="text-amber-600 mt-0.5">
+                          A: "{(item as any).custom_text}"
+                        </p>
+                      )}
+                    </div>
+                  )}
                   {/* Addons */}
                   {(item as any).addons && (item as any).addons.length > 0 && (
                     <div className="mt-2 pl-2 border-l-2 border-gray-200 space-y-1">
@@ -104,7 +119,7 @@ export const OrderDetailModal = ({
                     </div>
                   )}
                   {item.notes && (
-                    <p className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded mt-2 inline-block">{item.notes}</p>
+                    <p className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded mt-2 inline-block">{item.notes}</p>
                   )}
                 </div>
                 <p className="font-semibold text-gray-900">{formatCurrency(item.quantity * item.unit_price)}</p>

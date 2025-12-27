@@ -149,6 +149,20 @@ export const SessionDetailModal = ({
                         )}
                         <span className="text-muted-foreground">× {item.quantity}</span>
                       </div>
+                      {((item as any).custom_text_prompt || (item as any).custom_text) && (
+                        <div className="mt-1 text-xs bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                          {(item as any).custom_text_prompt && (
+                            <div className="text-amber-700 font-medium">
+                              Q: {(item as any).custom_text_prompt}
+                            </div>
+                          )}
+                          {(item as any).custom_text && (
+                            <div className="text-amber-600 mt-0.5">
+                              A: "{(item as any).custom_text}"
+                            </div>
+                          )}
+                        </div>
+                      )}
                       {(item as any).addons && (item as any).addons.length > 0 && (
                         <div className="mt-1 pl-2 border-l border-border space-y-0.5">
                           {(item as any).addons.map((addon: any, addonIdx: number) => (
@@ -165,9 +179,9 @@ export const SessionDetailModal = ({
             )}
 
             {/* Messages - WhatsApp Style */}
-            <div 
+            <div
               className="flex-1 overflow-y-auto p-4 space-y-3"
-              style={{ 
+              style={{
                 backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
                 backgroundColor: 'hsl(var(--muted) / 0.3)'
               }}
@@ -190,13 +204,13 @@ export const SessionDetailModal = ({
                       <div
                         className={cn(
                           "relative max-w-[75%] px-3 py-2 rounded-lg shadow-sm",
-                          isIncoming 
-                            ? "bg-background border border-border rounded-tl-none" 
-                            : "bg-secondary/10 text-foreground rounded-tr-none"
+                          isIncoming
+                            ? "bg-background border border-border rounded-tl-none"
+                            : "bg-secondary/10 text-foreground rounded-tr-none shadow-sm"
                         )}
                       >
                         {/* Message tail */}
-                        <div 
+                        <div
                           className={cn(
                             "absolute top-0 w-3 h-3",
                             isIncoming
@@ -204,17 +218,17 @@ export const SessionDetailModal = ({
                               : "-right-3 bg-secondary/10"
                           )}
                           style={{
-                            clipPath: isIncoming 
-                              ? 'polygon(100% 0, 0 0, 100% 100%)' 
+                            clipPath: isIncoming
+                              ? 'polygon(100% 0, 0 0, 100% 100%)'
                               : 'polygon(0 0, 100% 0, 0 100%)'
                           }}
                         />
-                        
+
                         {/* Message content */}
                         <p className="text-sm whitespace-pre-wrap break-words">
                           {formatWhatsAppText(msg.content)}
                         </p>
-                        
+
                         {/* Timestamp and read status */}
                         <div className="flex items-center justify-end gap-1 mt-1">
                           <span className="text-[10px] text-muted-foreground">

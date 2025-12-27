@@ -220,8 +220,8 @@ const Categories = () => {
             <Input
               id="display_order"
               type="number"
-              min={0}
-              value={formData.display_order || 0}
+              min="0"
+              value={formData.display_order || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, display_order: parseInt(e.target.value) || 0 }))}
               placeholder="0"
             />

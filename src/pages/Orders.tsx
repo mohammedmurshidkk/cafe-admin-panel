@@ -85,11 +85,16 @@ const Orders = () => {
     {
       key: 'location',
       header: 'Location',
-      render: (order: Order) => (
-        <span className="text-sm text-muted-foreground truncate max-w-[150px] block">
-          {order.fulfillment_location || 'N/A'}
-        </span>
-      ),
+      render: (order: Order) => {
+        const location = order.fulfillment_type === 'takeaway'
+          ? (order as any).pickup_outlet_name
+          : (order as any).delivery_address || order.fulfillment_location;
+        return (
+          <span className="text-sm text-muted-foreground truncate max-w-[150px] block" title={location || ''}>
+            {location || 'N/A'}
+          </span>
+        );
+      },
       className: 'hidden lg:table-cell',
     },
     {
