@@ -26,6 +26,7 @@ export const formatDate = (date: string): string => {
 
 export const formatDateTime = (date: string): string => {
   const d = createUtcDate(date);
+  console.log('####### dd', d, date)
   if (isNaN(d.getTime())) return "Invalid date";
   return format(d, 'MMM d, yyyy h:mm a');
 };

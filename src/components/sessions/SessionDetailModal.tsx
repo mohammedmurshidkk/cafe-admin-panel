@@ -9,7 +9,8 @@ import {
   Pause,
   Play,
   ShoppingCart,
-  CheckCheck
+  CheckCheck,
+  RefreshCw
 } from 'lucide-react';
 import {
   Dialog,
@@ -65,6 +66,8 @@ interface SessionDetailModalProps {
   isLoading: boolean;
   onToggleAi?: (paused: boolean) => Promise<void>;
   isToggling?: boolean;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
 }
 
 export const SessionDetailModal = ({
@@ -74,6 +77,8 @@ export const SessionDetailModal = ({
   isLoading,
   onToggleAi,
   isToggling = false,
+  onRefresh,
+  isRefreshing = false,
 }: SessionDetailModalProps) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -107,25 +112,37 @@ export const SessionDetailModal = ({
                     </div>
                   </div>
                 </div>
-                {onToggleAi && (
-                  <Button
-                    variant={sessionDetail.session.ai_paused ? 'success' : 'warning'}
-                    size="sm"
-                    onClick={() => onToggleAi(!sessionDetail.session.ai_paused)}
-                    disabled={isToggling}
-                    className="gap-2 mr-8"
-                  >
-                    {sessionDetail.session.ai_paused ? (
-                      <>
-                        <Play className="h-4 w-4" /> Resume AI
-                      </>
-                    ) : (
-                      <>
-                        <Pause className="h-4 w-4" /> Pause AI
-                      </>
-                    )}
-                  </Button>
-                )}
+                <div className="flex items-center gap-2 mr-8">
+                  {onRefresh && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={onRefresh}
+                      disabled={isRefreshing}
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    </Button>
+                  )}
+                  {onToggleAi && (
+                    <Button
+                      variant={sessionDetail.session.ai_paused ? 'success' : 'warning'}
+                      size="sm"
+                      onClick={() => onToggleAi(!sessionDetail.session.ai_paused)}
+                      disabled={isToggling}
+                      className="gap-2"
+                    >
+                      {sessionDetail.session.ai_paused ? (
+                        <>
+                          <Play className="h-4 w-4" /> Resume AI
+                        </>
+                      ) : (
+                        <>
+                          <Pause className="h-4 w-4" /> Pause AI
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 

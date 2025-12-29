@@ -61,17 +61,17 @@ export const OrderDetailModal = ({
           </div>
 
           <div className="space-y-2 pl-[52px]">
-            {order.fulfillment_datetime && (
+            {(order.pickup_time || order?.delivery_time) && (
               <div className="flex items-center gap-2 text-sm">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{formatDateTime(order.fulfillment_datetime)}</span>
+                <span>{formatDateTime(order.pickup_time || order?.delivery_time)}</span>
               </div>
             )}
 
-            {order.fulfillment_location && (
+            {(order.pickup_outlet_name || order?.delivery_address) && (
               <div className="flex items-start gap-2 text-sm">
                 <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                <span>{order.fulfillment_location}</span>
+                <span>{order.pickup_outlet_name || order?.delivery_address}</span>
               </div>
             )}
           </div>

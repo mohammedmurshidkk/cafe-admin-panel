@@ -65,26 +65,26 @@ export const useNotificationSocket = (
     [browserNotificationsEnabled]
   );
 
-  useEffect(() => {
-    const unsubscribe = on('new_notification', (data: unknown) => {
-      const notification = data as Notification;
+  // useEffect(() => {
+  //   const unsubscribe = on('new_notification', (data: unknown) => {
+  //     const notification = data as Notification;
 
-      // Refetch unread count
-      refetchUnreadCount();
+  //     // Refetch unread count
+  //     refetchUnreadCount();
 
-      // Play sound
-      playNotificationSound();
+  //     // Play sound
+  //     playNotificationSound();
 
-      // Show browser notification (desktop)
-      showBrowserNotification(notification);
+  //     // Show browser notification (desktop)
+  //     showBrowserNotification(notification);
 
-      // Show toast notification (in-app)
-      toast.info(notification.message, {
-        description: notification.customer_phone || 'System notification',
-        duration: 5000,
-      });
-    });
+  //     // Show toast notification (in-app)
+  //     toast.info(notification.message, {
+  //       description: notification.customer_phone || 'System notification',
+  //       duration: 5000,
+  //     });
+  //   });
 
-    return unsubscribe;
-  }, [on, refetchUnreadCount, playNotificationSound, showBrowserNotification])
+  //   return unsubscribe;
+  // }, [on, refetchUnreadCount, playNotificationSound, showBrowserNotification])
 };

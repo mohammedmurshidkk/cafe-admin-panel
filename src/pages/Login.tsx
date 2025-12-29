@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { ChangePasswordModal } from '@/components/auth/ChangePasswordModal';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const { login, isLoading, isAuthenticated } = useAuth();
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -72,9 +74,9 @@ const Login = () => {
               />
             </div>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               variant="gradient"
               disabled={isLoading}
             >
@@ -87,12 +89,25 @@ const Login = () => {
                 'Sign in'
               )}
             </Button>
+
+            <button
+              type="button"
+              onClick={() => setShowChangePassword(true)}
+              className="w-full text-sm text-primary hover:underline"
+            >
+              Change Password
+            </button>
           </form>
         </div>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Manage your WhatsApp ordering system
         </p>
+
+        <ChangePasswordModal
+          open={showChangePassword}
+          onClose={() => setShowChangePassword(false)}
+        />
       </div>
     </div>
   );

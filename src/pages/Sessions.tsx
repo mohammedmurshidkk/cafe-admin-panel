@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageSquare, Pause, Play, Phone, Search } from 'lucide-react';
+import { MessageSquare, Pause, Play, Phone, Search, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -34,13 +34,13 @@ const Sessions = () => {
   const [page, setPage] = useState(1);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
-  const { data, isLoading } = useGetSessionsQuery({ 
+  const { data, isLoading, isFetching, refetch } = useGetSessionsQuery({ 
     status: statusFilter, 
     page, 
     limit: 20 
   });
-  const { data: sessionDetail, isLoading: detailLoading } = useGetSessionDetailQuery(
-    selectedSessionId!, 
+  const { data: sessionDetail, isLoading: detailLoading, isFetching: detailFetching, refetch: refetchDetail } = useGetSessionDetailQuery(
+    selectedSessionId!,
     { skip: !selectedSessionId }
   );
   const [toggleAiPause, { isLoading: isToggling }] = useToggleAiPauseMutation();
@@ -104,6 +104,14 @@ const Sessions = () => {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
 
       {/* Sessions List */}
@@ -166,6 +174,8 @@ const Sessions = () => {
         isLoading={detailLoading}
         onToggleAi={handleSessionToggleAi}
         isToggling={isToggling}
+        onRefresh={() => refetchDetail()}
+        isRefreshing={detailFetching}
       />
     </div>
   );

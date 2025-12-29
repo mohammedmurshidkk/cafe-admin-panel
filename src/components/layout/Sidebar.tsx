@@ -34,7 +34,7 @@ export const Sidebar = () => {
   return (
     <aside 
       className={cn(
-        "hidden md:flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out",
+        "hidden md:flex flex-col shrink-0 bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out",
         collapsed ? "w-16" : "w-64"
       )}
     >

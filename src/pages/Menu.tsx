@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload, Search } from 'lucide-react';
+import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload, Search, RefreshCw, FileText } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +24,9 @@ import {
   useCreateMenuItemMutation,
   useUpdateMenuItemMutation,
   useDeleteMenuItemMutation,
-  useUploadMenuItemImageMutation
+  useUploadMenuItemImageMutation,
+  useSyncMenuPdfMutation,
+  useLazyGetMenuPdfQuery,
 } from '@/store/api/menuApi';
 import { useGetCategoriesQuery } from '@/store/api/categoriesApi';
 import { MenuItem, MenuItemFormData } from '@/types';
@@ -84,6 +86,8 @@ const Menu = () => {
   const [updateItem, { isLoading: isUpdating }] = useUpdateMenuItemMutation();
   const [deleteMenuItem, { isLoading: isDeleting }] = useDeleteMenuItemMutation();
   const [uploadImage, { isLoading: isUploading }] = useUploadMenuItemImageMutation();
+  const [syncMenuPdf, { isLoading: isSyncingPdf }] = useSyncMenuPdfMutation();
+  const [getMenuPdf] = useLazyGetMenuPdfQuery();
 
   const openForm = (item?: MenuItem) => {
     if (item) {
@@ -207,9 +211,9 @@ const Menu = () => {
 
   const handleToggleAvailable = async (item: MenuItem) => {
     try {
-      await updateItem({ 
-        itemId: item.id, 
-        data: { is_available: !item.is_available } 
+      await updateItem({
+        itemId: item.id,
+        data: { is_available: !item.is_available }
       }).unwrap();
       toast.success(item.is_available ? 'Item marked unavailable' : 'Item marked available');
     } catch (error) {
@@ -217,16 +221,44 @@ const Menu = () => {
     }
   };
 
+  const handleSyncPdf = async () => {
+    try {
+      const result = await syncMenuPdf().unwrap();
+      toast.success(result.message || 'Menu PDF synced successfully');
+    } catch (error) {
+      toast.error('Failed to sync PDF');
+    }
+  };
+
+  const handleViewPdf = async () => {
+    try {
+      const result = await getMenuPdf().unwrap();
+      window.open(result.url, '_blank');
+    } catch (error) {
+      toast.error('Failed to get PDF');
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader 
-        title="Menu Items" 
+      <PageHeader
+        title="Menu Items"
         description="Manage your menu items and prices"
         action={
-          <Button variant="gradient" onClick={() => openForm()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Item
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleViewPdf}>
+              <FileText className="h-4 w-4 mr-2" />
+              View PDF
+            </Button>
+            <Button variant="outline" onClick={handleSyncPdf} disabled={isSyncingPdf}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${isSyncingPdf ? 'animate-spin' : ''}`} />
+              {isSyncingPdf ? 'Syncing...' : 'Sync Menu PDF'}
+            </Button>
+            <Button variant="gradient" onClick={() => openForm()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Item
+            </Button>
+          </div>
         }
       />
 

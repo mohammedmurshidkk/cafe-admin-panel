@@ -18,7 +18,7 @@ export const Header = ({ onMenuClick }: HeaderProps) => {
   });
 
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6 shadow-soft">
+    <header className="h-16 shrink-0 bg-card border-b border-border flex items-center justify-between px-4 md:px-6 shadow-soft">
       <div className="flex items-center gap-3">
         <Button
           variant="ghost"

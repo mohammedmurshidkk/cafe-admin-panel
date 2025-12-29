@@ -42,13 +42,24 @@ export const menuApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Menu'],
     }),
+    syncMenuPdf: builder.mutation<{ success: boolean; url: string; message: string }, void>({
+      query: () => ({
+        url: 'admin/menu/pdf/sync',
+        method: 'POST',
+      }),
+    }),
+    getMenuPdf: builder.query<{ url: string }, void>({
+      query: () => 'admin/menu/pdf',
+    }),
   }),
 });
 
-export const { 
-  useGetMenuItemsQuery, 
-  useCreateMenuItemMutation, 
-  useUpdateMenuItemMutation, 
+export const {
+  useGetMenuItemsQuery,
+  useCreateMenuItemMutation,
+  useUpdateMenuItemMutation,
   useDeleteMenuItemMutation,
-  useUploadMenuItemImageMutation 
+  useUploadMenuItemImageMutation,
+  useSyncMenuPdfMutation,
+  useLazyGetMenuPdfQuery,
 } = menuApi;

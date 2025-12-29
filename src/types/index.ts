@@ -94,6 +94,10 @@ export interface Order {
   fulfillment_datetime?: string;
   fulfillment_location?: string;
   order_number: string;
+  pickup_time?: string;
+  delivery_time?: string
+  pickup_outlet_name?: string
+  delivery_address?: string
 }
 
 export interface OrdersResponse {

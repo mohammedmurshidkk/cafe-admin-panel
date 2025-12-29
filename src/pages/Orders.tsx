@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Search, Filter, Truck, Store } from 'lucide-react';
+import { Search, Filter, Truck, Store, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { OrderDetailModal } from '@/components/orders/OrderDetailModal';
 import {
   Select,
@@ -36,7 +37,7 @@ const Orders = () => {
     setSelectedOrder(item);
   };
 
-  const { data, isLoading } = useGetOrdersQuery({ 
+  const { data, isLoading, isFetching, refetch } = useGetOrdersQuery({ 
     status: statusFilter === 'all' ? '' : statusFilter, 
     search, 
     page,
@@ -98,6 +99,16 @@ const Orders = () => {
       className: 'hidden lg:table-cell',
     },
     {
+      key: 'scheduled_time',
+      header: 'Pick/Delivery Time',
+      render: (order: Order) => {
+        const time = order.fulfillment_type === 'takeaway'
+          ? (order as any).pickup_time
+          : (order as any).delivery_time;
+        return time ? formatDateTime(time) : 'N/A';
+      }
+    },
+    {
       key: 'items',
       header: 'Items',
       render: (order: Order) => `${order.items.length} items`,
@@ -117,7 +128,7 @@ const Orders = () => {
     },
     {
       key: 'created_at',
-      header: 'Date',
+      header: 'Created Time',
       render: (order: Order) => formatDateTime(order.created_at),
       className: 'hidden lg:table-cell',
     },
@@ -154,6 +165,14 @@ const Orders = () => {
             ))}
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
 
       {/* Orders Table */}

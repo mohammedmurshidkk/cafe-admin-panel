@@ -15,14 +15,14 @@ export const AppLayout = () => {
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="h-screen flex bg-background overflow-hidden">
       <Sidebar />
       <MobileSidebar 
         open={mobileMenuOpen} 
         onClose={() => setMobileMenuOpen(false)} 
       />
       
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header onMenuClick={() => setMobileMenuOpen(true)} />
         
         <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-auto">
