@@ -2,7 +2,6 @@ import { Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
-import { useNotificationSocket } from '@/hooks/useNotificationSocket';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -10,12 +9,6 @@ interface HeaderProps {
 
 export const Header = ({ onMenuClick }: HeaderProps) => {
   const { user } = useAuth();
-
-  // Enable real-time notification updates
-  useNotificationSocket({
-    soundEnabled: true,
-    browserNotificationsEnabled: true,
-  });
 
   return (
     <header className="h-16 shrink-0 bg-card border-b border-border flex items-center justify-between px-4 md:px-6 shadow-soft">

@@ -14,7 +14,9 @@ import Categories from './pages/Categories';
 import Addons from './pages/Addons';
 import CompanyProfile from './pages/CompanyProfile';
 import Notifications from './pages/Notifications';
+import AdminChat from './pages/AdminChat';
 import SuperadminBusinesses from './pages/SuperadminBusinesses';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -26,6 +28,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           {/* Superadmin routes */}
           <Route path="/superadmin" element={<SuperadminLayout />}>
+            <Route path="dashboard" element={<SuperAdminDashboard />} />
             <Route path="businesses" element={<SuperadminBusinesses />} />
           </Route>
           {/* Regular admin routes */}
@@ -38,6 +41,7 @@ const App = () => (
             <Route path="/addons" element={<Addons />} />
             <Route path="/company" element={<CompanyProfile />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/chat" element={<AdminChat />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useChatWebSocket } from '@/hooks/useChatWebSocket';
+import { useNotificationWebSocket } from '@/hooks/useNotificationWebSocket';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
@@ -9,6 +11,10 @@ import { MobileSidebar } from './MobileSidebar';
 export const AppLayout = () => {
   const { isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Global WebSocket connections - active on all pages
+  useChatWebSocket();
+  useNotificationWebSocket();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

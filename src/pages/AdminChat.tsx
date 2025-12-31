@@ -1,0 +1,46 @@
+import { useState } from 'react';
+import { SessionList } from '@/components/chat/SessionList';
+import { ChatView } from '@/components/chat/ChatView';
+import { useChatWebSocket } from '@/hooks/useChatWebSocket';
+import { MessageSquare } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const AdminChat = () => {
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+
+  // Real-time updates via WebSocket
+  useChatWebSocket({ selectedSessionId });
+
+  return (
+    <div className="h-[calc(100vh-4rem)] -m-4 md:-m-6 -mb-20 md:-mb-6 flex overflow-hidden">
+      {/* Session List - Left Panel */}
+      <SessionList
+        selectedSessionId={selectedSessionId}
+        onSelectSession={setSelectedSessionId}
+        className={cn(
+          'w-full md:w-[320px] lg:w-[360px] border-r border-border flex-shrink-0',
+          selectedSessionId && 'hidden md:flex md:flex-col'
+        )}
+      />
+
+      {/* Chat View - Right Panel */}
+      {selectedSessionId ? (
+        <ChatView
+          sessionId={selectedSessionId}
+          onBack={() => setSelectedSessionId(null)}
+          className="flex-1"
+        />
+      ) : (
+        <div className="hidden md:flex flex-1 items-center justify-center bg-muted/30">
+          <div className="text-center text-muted-foreground">
+            <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-50" />
+            <h3 className="text-lg font-medium mb-1">Select a conversation</h3>
+            <p className="text-sm">Choose a session from the left to start chatting</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminChat;

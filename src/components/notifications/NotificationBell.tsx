@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 export const NotificationBell = () => {
   const { data: unreadData } = useGetUnreadCountQuery();
-  const unreadCount = unreadData?.data?.length || 0;
+  const unreadCount = unreadData?.count
 
   return (
     <Popover>

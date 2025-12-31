@@ -304,3 +304,158 @@ export interface UnreadCountResponse {
   count: number;
   data: Notification[];
 }
+
+// Superadmin Analytics types
+export interface AnalyticsOverviewResponse {
+  success: boolean;
+  data: {
+    overview: {
+      totalBusinesses: number;
+      activeBusinesses: number;
+      totalOrders: number;
+      totalSessions: number;
+    };
+    businesses: AnalyticsBusiness[];
+  };
+}
+
+export interface AnalyticsBusiness {
+  id: string;
+  name: string;
+  phone: string;
+  whatsapp_phone_number: string | null;
+  whatsapp_phone_number_id: string | null;
+  whatsapp_business_account_id: string | null;
+  whatsapp_webhook_verified: boolean;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface BusinessStats {
+  data: any;
+  businessName: string;
+  whatsappNumber: string;
+  messages: number;
+  orders: number;
+  sessions: number;
+  customers: number;
+}
+
+export interface WebhookStatus {
+  data: WebhookStatus;
+  status: 'active' | 'inactive' | 'never';
+  lastMessageReceived: string | null;
+}
+
+// Chat types
+export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'document';
+export type MessageDirection = 'inbound' | 'outbound' | 'outgoing';
+export type MessageStatus = 'sent' | 'delivered' | 'read' | 'failed';
+export type ChatSessionStatus = 'active' | 'completed' | 'expired';
+
+export interface ChatMessage {
+  id: string;
+  session_id: string;
+  direction: MessageDirection;
+  content: string;
+  message_type: MessageType;
+  media_url: string | null;
+  media_mime_type: string | null;
+  media_caption: string | null;
+  media_filename: string | null;
+  media_duration: number | null;
+  created_at: string;
+  status: MessageStatus;
+}
+
+export interface LastMessage {
+  content: string;
+  message_type: MessageType;
+  direction: MessageDirection;
+  created_at: string;
+}
+
+export interface ChatSession {
+  id: string;
+  customer_id: string;
+  customer_name: string | null;
+  customer_phone: string;
+  status: ChatSessionStatus;
+  ai_paused: boolean;
+  last_message_at: string;
+  created_at: string;
+  unread_count: number;
+  last_message: LastMessage | null;
+}
+
+export interface ChatCustomer {
+  id: string;
+  name: string | null;
+  phone: string;
+}
+
+export interface SessionListResponse {
+  success: boolean;
+  data: {
+    sessions: ChatSession[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+}
+
+export interface SessionMessagesResponse {
+  success: boolean;
+  messages?: ChatMessage[];
+  data: {
+    session: ChatSession;
+    customer: ChatCustomer;
+    messages: ChatMessage[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      hasMore: boolean;
+    };
+  };
+}
+
+export interface SendMessageRequest {
+  type: MessageType;
+  content?: string;
+  media_id?: string;
+  caption?: string;
+  filename?: string;
+}
+
+export interface SendMessageResponse {
+  success: boolean;
+  message?: ChatMessage;
+  data: {
+    message: ChatMessage;
+    whatsapp_message_id: string;
+  };
+}
+
+export interface UploadMediaResponse {
+  success: boolean;
+  data: {
+    media_id: string;
+    media_url: string;
+    mime_type: string;
+    file_size: number;
+    duration?: number;
+  };
+}
+
+export interface AiPauseResponse {
+  success: boolean;
+  data: {
+    session_id: string;
+    ai_paused: boolean;
+    paused_at: string | null;
+  };
+}

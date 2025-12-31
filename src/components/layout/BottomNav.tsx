@@ -1,10 +1,10 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  ClipboardList, 
-  MessageSquare, 
-  UtensilsCrossed, 
-  MoreHorizontal 
+import {
+  LayoutDashboard,
+  ClipboardList,
+  MessagesSquare,
+  UtensilsCrossed,
+  MoreHorizontal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -13,17 +13,18 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { FolderOpen, PlusCircle, Building2, LogOut } from 'lucide-react';
+import { FolderOpen, PlusCircle, Building2, LogOut, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const mainNavItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/orders', label: 'Orders', icon: ClipboardList },
-  { path: '/sessions', label: 'Sessions', icon: MessageSquare },
+  { path: '/chat', label: 'Chat', icon: MessagesSquare },
   { path: '/menu', label: 'Menu', icon: UtensilsCrossed },
 ];
 
 const moreNavItems = [
+  { path: '/sessions', label: 'Sessions', icon: MessageSquare },
   { path: '/categories', label: 'Categories', icon: FolderOpen },
   { path: '/addons', label: 'Addons', icon: PlusCircle },
   { path: '/company', label: 'Company Profile', icon: Building2 },

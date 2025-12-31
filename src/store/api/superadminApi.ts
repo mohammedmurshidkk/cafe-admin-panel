@@ -1,5 +1,5 @@
 import { apiSlice } from './apiSlice';
-import { SuperadminBusiness, BusinessesResponse, SuperadminBusinessFormData, CreateAdminData, SuccessResponse } from '@/types';
+import { SuperadminBusiness, BusinessesResponse, SuperadminBusinessFormData, CreateAdminData, SuccessResponse, AnalyticsOverviewResponse, BusinessStats, WebhookStatus } from '@/types';
 
 export const superadminApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -48,14 +48,27 @@ export const superadminApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Businesses'],
     }),
+    getAnalyticsOverview: builder.query<AnalyticsOverviewResponse, void>({
+      query: () => '/superadmin/analytics/overview',
+      providesTags: ['Businesses'],
+    }),
+    getBusinessStats: builder.query<BusinessStats, string>({
+      query: (id) => `/superadmin/businesses/${id}/stats`,
+    }),
+    getWebhookStatus: builder.query<WebhookStatus, string>({
+      query: (id) => `/superadmin/businesses/${id}/webhook-status`,
+    }),
   }),
 });
 
-export const { 
+export const {
   useGetBusinessesQuery,
   useCreateBusinessMutation,
   useUpdateBusinessMutation,
   useToggleBusinessStatusMutation,
   useUploadBusinessLogoMutation,
   useCreateBusinessAdminMutation,
+  useGetAnalyticsOverviewQuery,
+  useGetBusinessStatsQuery,
+  useGetWebhookStatusQuery,
 } = superadminApi;

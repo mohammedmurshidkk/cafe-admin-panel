@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store/store';
 import { logout } from '@/store/authSlice';
 import { Button } from '@/components/ui/button';
-import { Building2, LogOut, Shield } from 'lucide-react';
+import { Building2, LayoutDashboard, LogOut, Shield } from 'lucide-react';
 
 export const SuperadminLayout = () => {
   const dispatch = useDispatch();
@@ -37,6 +37,12 @@ export const SuperadminLayout = () => {
           </div>
           
           <nav className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" className="gap-2" asChild>
+              <a href="/superadmin/dashboard">
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
+              </a>
+            </Button>
             <Button variant="ghost" size="sm" className="gap-2" asChild>
               <a href="/superadmin/businesses">
                 <Building2 className="h-4 w-4" />

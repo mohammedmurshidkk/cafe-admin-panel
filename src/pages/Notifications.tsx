@@ -85,7 +85,7 @@ const Notifications = () => {
         }
       />
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between gap-4">
         <Select value={typeFilter} onValueChange={setTypeFilter}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Filter by type" />

@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  ClipboardList, 
-  MessageSquare, 
-  UtensilsCrossed, 
-  FolderOpen, 
-  PlusCircle, 
-  Building2, 
+import {
+  LayoutDashboard,
+  ClipboardList,
+  MessageSquare,
+  MessagesSquare,
+  UtensilsCrossed,
+  FolderOpen,
+  PlusCircle,
+  Building2,
   LogOut,
   ChevronLeft,
   ChevronRight
@@ -19,6 +20,7 @@ import { Button } from '@/components/ui/button';
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/orders', label: 'Orders', icon: ClipboardList },
+  { path: '/chat', label: 'Chat', icon: MessagesSquare },
   { path: '/sessions', label: 'Sessions', icon: MessageSquare },
   { path: '/menu', label: 'Menu Items', icon: UtensilsCrossed },
   { path: '/categories', label: 'Categories', icon: FolderOpen },
