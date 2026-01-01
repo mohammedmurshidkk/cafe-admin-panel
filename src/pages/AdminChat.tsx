@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { SessionList } from '@/components/chat/SessionList';
 import { ChatView } from '@/components/chat/ChatView';
 import { useChatWebSocket } from '@/hooks/useChatWebSocket';
@@ -6,7 +6,17 @@ import { MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const AdminChat = () => {
-  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const { sessionId } = useParams<{ sessionId: string }>();
+  const navigate = useNavigate();
+  const selectedSessionId = sessionId || null;
+
+  const handleSelectSession = (id: string | null) => {
+    if (id) {
+      navigate(`/chat/${id}`);
+    } else {
+      navigate('/chat');
+    }
+  };
 
   // Real-time updates via WebSocket
   useChatWebSocket({ selectedSessionId });
@@ -16,7 +26,7 @@ const AdminChat = () => {
       {/* Session List - Left Panel */}
       <SessionList
         selectedSessionId={selectedSessionId}
-        onSelectSession={setSelectedSessionId}
+        onSelectSession={handleSelectSession}
         className={cn(
           'w-full md:w-[320px] lg:w-[360px] border-r border-border flex-shrink-0',
           selectedSessionId && 'hidden md:flex md:flex-col'
@@ -27,7 +37,7 @@ const AdminChat = () => {
       {selectedSessionId ? (
         <ChatView
           sessionId={selectedSessionId}
-          onBack={() => setSelectedSessionId(null)}
+          onBack={() => handleSelectSession(null)}
           className="flex-1"
         />
       ) : (

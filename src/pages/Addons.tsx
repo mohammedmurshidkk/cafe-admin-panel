@@ -76,7 +76,6 @@ const Addons = () => {
 
   const openAddonForm = (groupId?: string, addon?: Addon) => {
     if (addon) {
-      console.log('####### groupId', groupId, addon, data)
       setEditingAddon(addon);
       setAddonData({
         name: addon.name,

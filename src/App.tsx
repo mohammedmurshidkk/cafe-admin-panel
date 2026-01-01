@@ -41,7 +41,7 @@ const App = () => (
             <Route path="/addons" element={<Addons />} />
             <Route path="/company" element={<CompanyProfile />} />
             <Route path="/notifications" element={<Notifications />} />
-            <Route path="/chat" element={<AdminChat />} />
+            <Route path="/chat/:sessionId?" element={<AdminChat />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />

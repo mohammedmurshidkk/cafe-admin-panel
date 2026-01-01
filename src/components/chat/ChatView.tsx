@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Phone, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatPhone } from '@/utils/formatters';
 
 interface ChatViewProps {
   sessionId: string;
@@ -84,7 +85,7 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
           <h3 className="font-medium truncate">{displayName}</h3>
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <Phone className="h-3 w-3" />
-            {customer?.phone}
+            {formatPhone(customer?.phone)}
           </p>
         </div>
 
