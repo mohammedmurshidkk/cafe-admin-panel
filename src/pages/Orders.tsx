@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, Truck, Store, RefreshCw } from 'lucide-react';
+import { Search, Filter, Truck, Store, RefreshCw, Loader2 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +15,34 @@ import {
 } from '@/components/ui/select';
 import { useGetOrdersQuery, useUpdateOrderStatusMutation } from '@/store/api/ordersApi';
 import { formatCurrency, formatDateTime, truncateId, formatPhone } from '@/utils/formatters';
+import { useReverseGeocode } from '@/hooks/useReverseGeocode';
 import { Order, OrderStatus } from '@/types';
 import { toast } from 'sonner';
+
+// Location cell component with reverse geocoding support
+const LocationCell = ({ order }: { order: Order }) => {
+  const directAddress = order.fulfillment_type === 'takeaway'
+    ? (order as any).pickup_outlet_name
+    : (order as any).delivery_address || order.fulfillment_location;
+
+  const needsGeocode = order.fulfillment_type === 'delivery' && !directAddress && order?.delivery_latitude && order?.delivery_longitude;
+  const { address: geocodedAddress, isLoading } = useReverseGeocode(
+    needsGeocode ? order?.delivery_latitude : null,
+    needsGeocode ? order?.delivery_longitude : null
+  );
+
+  const location = directAddress || geocodedAddress;
+
+  if (isLoading) {
+    return <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />;
+  }
+
+  return (
+    <span className="text-sm text-muted-foreground truncate max-w-[150px] block" title={location || ''}>
+      {location || 'N/A'}
+    </span>
+  );
+};
 
 const statusOptions: { value: OrderStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All Statuses' },
@@ -86,16 +112,7 @@ const Orders = () => {
     {
       key: 'location',
       header: 'Location',
-      render: (order: Order) => {
-        const location = order.fulfillment_type === 'takeaway'
-          ? (order as any).pickup_outlet_name
-          : (order as any).delivery_address || order.fulfillment_location;
-        return (
-          <span className="text-sm text-muted-foreground truncate max-w-[150px] block" title={location || ''}>
-            {location || 'N/A'}
-          </span>
-        );
-      },
+      render: (order: Order) => <LocationCell order={order} />,
       className: 'hidden lg:table-cell',
     },
     {

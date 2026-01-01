@@ -84,6 +84,8 @@ export interface OrderItem {
 }
 
 export interface Order {
+  delivery_latitude?: string | null;
+  delivery_longitude?: string |null
   id: string;
   customer_phone: string;
   items: OrderItem[];

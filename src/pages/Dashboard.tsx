@@ -164,7 +164,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm">#{truncateId(order.id)}</p>
+                        <p className="font-medium text-sm">{order?.order_number}</p>
                         {order.fulfillment_type && (
                           <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                             {order.fulfillment_type}

@@ -2,8 +2,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FormModal } from '@/components/ui/FormModal';
 import { Order, OrderStatus } from '@/types';
-import { formatCurrency, formatDateTime, truncateId, formatPhone } from '@/utils/formatters';
-import { MapPin, Clock, Truck, Store } from 'lucide-react';
+import { formatCurrency, formatDateTime, formatPhone } from '@/utils/formatters';
+import { useReverseGeocode } from '@/hooks/useReverseGeocode';
+import { MapPin, Clock, Truck, Store, Loader2 } from 'lucide-react';
 
 interface OrderDetailModalProps {
   order: Order | null;
@@ -18,7 +19,16 @@ export const OrderDetailModal = ({
   onStatusChange,
   isUpdating = false
 }: OrderDetailModalProps) => {
+  // Reverse geocode if delivery_address is null but coordinates exist
+  const needsGeocode = order?.fulfillment_type === 'delivery' && !order?.delivery_address && order?.delivery_latitude && order?.delivery_longitude;
+  const { address: geocodedAddress, isLoading: isGeocoding } = useReverseGeocode(
+    needsGeocode ? order?.delivery_latitude : null,
+    needsGeocode ? order?.delivery_longitude : null
+  );
+
   if (!order) return null;
+
+  const displayAddress = order.pickup_outlet_name || order.delivery_address || geocodedAddress;
 
   return (
     <FormModal
@@ -68,10 +78,17 @@ export const OrderDetailModal = ({
               </div>
             )}
 
-            {(order.pickup_outlet_name || order?.delivery_address) && (
+            {(displayAddress || isGeocoding) && (
               <div className="flex items-start gap-2 text-sm">
                 <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                <span>{order.pickup_outlet_name || order?.delivery_address}</span>
+                {isGeocoding ? (
+                  <span className="flex items-center gap-1 text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Loading address...
+                  </span>
+                ) : (
+                  <span>{displayAddress}</span>
+                )}
               </div>
             )}
           </div>
