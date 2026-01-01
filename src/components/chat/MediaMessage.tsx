@@ -133,6 +133,16 @@ export const MediaMessage = ({ message, onImageClick }: MediaMessageProps) => {
         </a>
       );
 
+    case 'sticker':
+      return (
+        <img
+          src={message.media_url || ''}
+          alt="Sticker"
+          className="w-32 h-32 object-contain cursor-pointer"
+          onClick={() => message.media_url && onImageClick?.(message.media_url)}
+        />
+      );
+
     default:
       return null;
   }

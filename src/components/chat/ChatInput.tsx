@@ -265,7 +265,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ sessionI
           onKeyDown={handleKeyDown}
           placeholder={pendingMedia ? 'Add a caption...' : 'Type a message...'}
           disabled={isDisabled}
-          className="flex-1 min-h-[40px] max-h-[120px] resize-none rounded-2xl"
+          className="flex-1 min-h-[40px] max-h-[72px] resize-none rounded-2xl overflow-y-auto"
           rows={1}
         />
 
