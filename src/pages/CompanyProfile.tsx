@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { 
-  Building2, 
-  MapPin, 
-  MessageSquare, 
-  Brain, 
+import {
+  Building2,
+  MapPin,
+  MessageSquare,
+  Brain,
   AlertTriangle,
   Plus,
   Pencil,
@@ -14,7 +14,9 @@ import {
   Truck,
   ShoppingBag,
   Settings,
-  Upload
+  Upload,
+  Cake,
+  GripVertical
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -26,7 +28,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   useGetBusinessProfileQuery,
   useUpdateBusinessProfileMutation,
   useUploadBusinessLogoMutation,
@@ -34,6 +44,23 @@ import {
   useUpdateOutletMutation,
   useDeleteOutletMutation
 } from '@/store/api/businessApi';
+import {
+  useGetCakePricingConfigQuery,
+  useUpdateCakePricingConfigMutation,
+  useCreateWeightMutation,
+  useUpdateWeightMutation,
+  useDeleteWeightMutation,
+  useCreateFlavorMutation,
+  useUpdateFlavorMutation,
+  useDeleteFlavorMutation,
+  useCreateDesignElementMutation,
+  useUpdateDesignElementMutation,
+  useDeleteDesignElementMutation,
+  useSeedDesignElementsMutation,
+  WeightPricing,
+  FlavorPricing,
+  DesignElement,
+} from '@/store/api/cakePricingApi';
 import { Outlet } from '@/types';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -45,7 +72,21 @@ const CompanyProfile = () => {
   const [createOutlet, { isLoading: isCreatingOutlet }] = useCreateOutletMutation();
   const [updateOutlet, { isLoading: isUpdatingOutlet }] = useUpdateOutletMutation();
   const [deleteOutletMutation, { isLoading: isDeletingOutlet }] = useDeleteOutletMutation();
-  
+
+  // Cake Pricing API hooks
+  const { data: cakePricingData, isLoading: isCakePricingLoading } = useGetCakePricingConfigQuery();
+  const [updateCakePricingConfig] = useUpdateCakePricingConfigMutation();
+  const [createWeight, { isLoading: isCreatingWeight }] = useCreateWeightMutation();
+  const [updateWeightApi, { isLoading: isUpdatingWeight }] = useUpdateWeightMutation();
+  const [deleteWeightApi, { isLoading: isDeletingWeight }] = useDeleteWeightMutation();
+  const [createFlavor, { isLoading: isCreatingFlavor }] = useCreateFlavorMutation();
+  const [updateFlavorApi, { isLoading: isUpdatingFlavor }] = useUpdateFlavorMutation();
+  const [deleteFlavorApi, { isLoading: isDeletingFlavor }] = useDeleteFlavorMutation();
+  const [createDesignElement, { isLoading: isCreatingElement }] = useCreateDesignElementMutation();
+  const [updateDesignElementApi, { isLoading: isUpdatingElement }] = useUpdateDesignElementMutation();
+  const [deleteDesignElementApi, { isLoading: isDeletingElement }] = useDeleteDesignElementMutation();
+  const [seedDesignElements, { isLoading: isSeeding }] = useSeedDesignElementsMutation();
+
   const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
@@ -69,6 +110,33 @@ const CompanyProfile = () => {
   const [editingOutlet, setEditingOutlet] = useState<Outlet | null>(null);
   const [deleteOutlet, setDeleteOutlet] = useState<Outlet | null>(null);
   const [outletData, setOutletData] = useState({ outlet_name: '', address: '', phone: '', is_active: true });
+
+  // Cake pricing data from API
+  const cakePricingConfig = cakePricingData?.data;
+  const weightPricing = cakePricingConfig?.weights || [];
+  const flavorPricing = cakePricingConfig?.flavors || [];
+  const designElements = cakePricingConfig?.elements || [];
+
+  // Cake pricing modals
+  const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
+  const [isFlavorModalOpen, setIsFlavorModalOpen] = useState(false);
+  const [isDesignElementModalOpen, setIsDesignElementModalOpen] = useState(false);
+  const [editingWeight, setEditingWeight] = useState<WeightPricing | null>(null);
+  const [editingFlavor, setEditingFlavor] = useState<FlavorPricing | null>(null);
+  const [editingDesignElement, setEditingDesignElement] = useState<DesignElement | null>(null);
+  const [deleteWeightItem, setDeleteWeightItem] = useState<WeightPricing | null>(null);
+  const [deleteFlavorItem, setDeleteFlavorItem] = useState<FlavorPricing | null>(null);
+  const [deleteDesignItem, setDeleteDesignItem] = useState<DesignElement | null>(null);
+
+  // Cake pricing form data
+  const [weightFormData, setWeightFormData] = useState({ weight_grams: 500, base_price: 0 });
+  const [flavorFormData, setFlavorFormData] = useState({ flavor_name: '', additional_price: 0 });
+  const [designFormData, setDesignFormData] = useState({
+    element_key: '',
+    element_label: '',
+    price: 0,
+    price_type: 'fixed' as 'fixed' | 'per_unit'
+  });
 
   useEffect(() => {
     if (data?.business) {
@@ -170,6 +238,196 @@ const CompanyProfile = () => {
       toast.error('Failed to delete outlet');
     }
   };
+
+  // Cake Pricing Helper Functions
+  const openWeightModal = (weight?: WeightPricing) => {
+    if (weight) {
+      setEditingWeight(weight);
+      setWeightFormData({ weight_grams: weight.weight_grams, base_price: weight.base_price });
+    } else {
+      setEditingWeight(null);
+      setWeightFormData({ weight_grams: 500, base_price: 0 });
+    }
+    setIsWeightModalOpen(true);
+  };
+
+  const openFlavorModal = (flavor?: FlavorPricing) => {
+    if (flavor) {
+      setEditingFlavor(flavor);
+      setFlavorFormData({ flavor_name: flavor.flavor_name, additional_price: flavor.additional_price });
+    } else {
+      setEditingFlavor(null);
+      setFlavorFormData({ flavor_name: '', additional_price: 0 });
+    }
+    setIsFlavorModalOpen(true);
+  };
+
+  const openDesignElementModal = (element?: DesignElement) => {
+    if (element) {
+      setEditingDesignElement(element);
+      setDesignFormData({
+        element_key: element.element_key,
+        element_label: element.element_label,
+        price: element.price,
+        price_type: element.price_type
+      });
+    } else {
+      setEditingDesignElement(null);
+      setDesignFormData({ element_key: '', element_label: '', price: 0, price_type: 'fixed' });
+    }
+    setIsDesignElementModalOpen(true);
+  };
+
+  const handleSubmitWeight = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingWeight) {
+        await updateWeightApi({
+          id: editingWeight.id,
+          base_price: weightFormData.base_price,
+        }).unwrap();
+        toast.success('Weight pricing updated');
+      } else {
+        await createWeight(weightFormData).unwrap();
+        toast.success('Weight pricing added');
+      }
+      setIsWeightModalOpen(false);
+    } catch (error) {
+      toast.error('Failed to save weight pricing');
+    }
+  };
+
+  const handleSubmitFlavor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingFlavor) {
+        await updateFlavorApi({
+          id: editingFlavor.id,
+          ...flavorFormData,
+        }).unwrap();
+        toast.success('Flavor pricing updated');
+      } else {
+        await createFlavor(flavorFormData).unwrap();
+        toast.success('Flavor pricing added');
+      }
+      setIsFlavorModalOpen(false);
+    } catch (error) {
+      toast.error('Failed to save flavor pricing');
+    }
+  };
+
+  const handleSubmitDesignElement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingDesignElement) {
+        await updateDesignElementApi({
+          id: editingDesignElement.id,
+          ...designFormData,
+        }).unwrap();
+        toast.success('Design element updated');
+      } else {
+        await createDesignElement(designFormData).unwrap();
+        toast.success('Design element added');
+      }
+      setIsDesignElementModalOpen(false);
+    } catch (error) {
+      toast.error('Failed to save design element');
+    }
+  };
+
+  const handleDeleteWeight = async () => {
+    if (!deleteWeightItem) return;
+    try {
+      await deleteWeightApi(deleteWeightItem.id).unwrap();
+      toast.success('Weight pricing deleted');
+      setDeleteWeightItem(null);
+    } catch (error) {
+      toast.error('Failed to delete weight pricing');
+    }
+  };
+
+  const handleDeleteFlavor = async () => {
+    if (!deleteFlavorItem) return;
+    try {
+      await deleteFlavorApi(deleteFlavorItem.id).unwrap();
+      toast.success('Flavor pricing deleted');
+      setDeleteFlavorItem(null);
+    } catch (error) {
+      toast.error('Failed to delete flavor pricing');
+    }
+  };
+
+  const handleDeleteDesignElement = async () => {
+    if (!deleteDesignItem) return;
+    try {
+      await deleteDesignElementApi(deleteDesignItem.id).unwrap();
+      toast.success('Design element deleted');
+      setDeleteDesignItem(null);
+    } catch (error) {
+      toast.error('Failed to delete design element');
+    }
+  };
+
+  const handleCakePricingToggle = async (enabled: boolean) => {
+    try {
+      await updateCakePricingConfig({ enabled }).unwrap();
+    } catch (error) {
+      toast.error('Failed to update cake pricing settings');
+    }
+  };
+
+  const handleAutoSendToggle = async (auto_send: boolean) => {
+    try {
+      await updateCakePricingConfig({ auto_send }).unwrap();
+    } catch (error) {
+      toast.error('Failed to update auto-send setting');
+    }
+  };
+
+  const handleQuoteExpiryChange = async (quote_expiry_hours: number) => {
+    try {
+      await updateCakePricingConfig({ quote_expiry_hours }).unwrap();
+    } catch (error) {
+      toast.error('Failed to update quote expiry');
+    }
+  };
+
+  const handleSeedElements = async () => {
+    try {
+      await seedDesignElements().unwrap();
+      toast.success('Standard design elements added');
+    } catch (error) {
+      toast.error('Failed to seed design elements');
+    }
+  };
+
+  const formatWeight = (grams: number) => {
+    if (grams >= 1000) return `${grams / 1000}kg`;
+    return `${grams}g`;
+  };
+
+  const predefinedDesignElements = [
+    { key: 'extra_tier', label: 'Extra Tier' },
+    { key: 'fondant_covering', label: 'Fondant Covering' },
+    { key: 'buttercream_finish', label: 'Buttercream Finish' },
+    { key: 'fondant_bow', label: 'Fondant Bow' },
+    { key: 'crown_topper', label: 'Crown/Tiara Topper' },
+    { key: 'doll_topper', label: 'Doll/Figurine Topper' },
+    { key: 'number_topper', label: 'Number Topper' },
+    { key: 'name_letters', label: 'Name Letters' },
+    { key: 'decorative_spheres', label: 'Decorative Spheres/Balls' },
+    { key: 'edible_print', label: 'Edible Print' },
+    { key: 'hand_painted', label: 'Hand-Painted Details' },
+    { key: 'quilted_pattern', label: 'Quilted/Textured Pattern' },
+    { key: 'gold_accents', label: 'Gold Accents' },
+    { key: 'silver_accents', label: 'Silver Accents' },
+    { key: 'fresh_flowers', label: 'Fresh Flowers' },
+    { key: 'chocolate_drizzle', label: 'Chocolate Drizzle' },
+    { key: 'macarons', label: 'Macarons' },
+    { key: 'meringue_kisses', label: 'Meringue Kisses' },
+    { key: 'butterfly_decor', label: 'Butterfly Decorations' },
+    { key: 'theme_decorations', label: 'Theme Decorations' },
+  ];
 
   if (isLoading) {
     return (
@@ -543,6 +801,250 @@ const CompanyProfile = () => {
         />
       </div>
 
+      {/* Custom Cake Pricing */}
+      <div className="card-warm p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
+              <Cake className="h-5 w-5 text-pink-500" />
+            </div>
+            <div>
+              <h2 className="font-display font-semibold text-lg">Custom Cake Pricing</h2>
+              <p className="text-sm text-muted-foreground">AI-powered cake quote generation from images</p>
+            </div>
+          </div>
+          <Switch
+            checked={cakePricingConfig?.enabled ?? false}
+            onCheckedChange={handleCakePricingToggle}
+            disabled={isCakePricingLoading}
+          />
+        </div>
+
+        {cakePricingConfig?.enabled && (
+          <div className="space-y-6">
+            {/* Settings Row */}
+            <div className="flex flex-wrap gap-6 p-4 bg-muted/50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Switch
+                  id="cakeAutoSend"
+                  checked={cakePricingConfig?.auto_send ?? false}
+                  onCheckedChange={handleAutoSendToggle}
+                />
+                <div>
+                  <Label htmlFor="cakeAutoSend" className="cursor-pointer">Auto-send quotes</Label>
+                  <p className="text-xs text-muted-foreground">Send quotes without admin approval</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Label htmlFor="quoteExpiry">Quote expires in</Label>
+                <Input
+                  id="quoteExpiry"
+                  type="number"
+                  min="1"
+                  max="168"
+                  value={cakePricingConfig?.quote_expiry_hours ?? 24}
+                  onBlur={(e) => handleQuoteExpiryChange(parseInt(e.target.value) || 24)}
+                  className="w-20"
+                />
+                <span className="text-sm text-muted-foreground">hours</span>
+              </div>
+            </div>
+
+            {cakePricingConfig?.auto_send && (
+              <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
+                <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Auto-send is enabled. Quotes will be sent to customers without review.
+                </p>
+              </div>
+            )}
+
+            {/* Pricing Tabs */}
+            <Tabs defaultValue="weights" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="weights">Weight Pricing</TabsTrigger>
+                <TabsTrigger value="flavors">Flavor Pricing</TabsTrigger>
+                <TabsTrigger value="design">Design Elements</TabsTrigger>
+              </TabsList>
+
+              {/* Weight Pricing Tab */}
+              <TabsContent value="weights" className="mt-4">
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-sm text-muted-foreground">Base prices by cake weight</p>
+                  <Button variant="outline" size="sm" onClick={() => openWeightModal()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Weight
+                  </Button>
+                </div>
+
+                {weightPricing.length > 0 ? (
+                  <div className="space-y-2">
+                    {weightPricing.map((weight) => (
+                      <div
+                        key={weight.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                      >
+                        <div className="flex items-center gap-4">
+                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+                          <div>
+                            <p className="font-medium">{formatWeight(weight.weight_grams)}</p>
+                            <p className="text-sm text-muted-foreground">₹{weight.base_price}</p>
+                          </div>
+                          <Badge variant={weight.is_active ? 'active' : 'secondary'}>
+                            {weight.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => openWeightModal(weight)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteWeightItem(weight)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Cake className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No weight pricing configured</p>
+                    <p className="text-sm">Add weight options to get started</p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Flavor Pricing Tab */}
+              <TabsContent value="flavors" className="mt-4">
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-sm text-muted-foreground">Additional charges by flavor</p>
+                  <Button variant="outline" size="sm" onClick={() => openFlavorModal()}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Flavor
+                  </Button>
+                </div>
+
+                {flavorPricing.length > 0 ? (
+                  <div className="space-y-2">
+                    {flavorPricing.map((flavor) => (
+                      <div
+                        key={flavor.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                      >
+                        <div className="flex items-center gap-4">
+                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+                          <div>
+                            <p className="font-medium">{flavor.flavor_name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {flavor.additional_price === 0 ? 'No extra charge' : `+₹${flavor.additional_price}`}
+                            </p>
+                          </div>
+                          <Badge variant={flavor.is_active ? 'active' : 'secondary'}>
+                            {flavor.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => openFlavorModal(flavor)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteFlavorItem(flavor)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Cake className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No flavor pricing configured</p>
+                    <p className="text-sm">Add flavor options to get started</p>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Design Elements Tab */}
+              <TabsContent value="design" className="mt-4">
+                <div className="flex justify-between items-center mb-4">
+                  <p className="text-sm text-muted-foreground">Decorative elements detected by AI</p>
+                  <div className="flex gap-2">
+                    {designElements.length === 0 && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleSeedElements}
+                        disabled={isSeeding}
+                      >
+                        {isSeeding ? 'Adding...' : 'Add Standard Elements'}
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm" onClick={() => openDesignElementModal()}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Element
+                    </Button>
+                  </div>
+                </div>
+
+                {designElements.length > 0 ? (
+                  <div className="space-y-2">
+                    {designElements.map((element) => (
+                      <div
+                        key={element.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
+                      >
+                        <div className="flex items-center gap-4">
+                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+                          <div>
+                            <p className="font-medium">{element.element_label}</p>
+                            <p className="text-sm text-muted-foreground">
+                              ₹{element.price} {element.price_type === 'per_unit' ? '/ unit' : '(fixed)'}
+                            </p>
+                          </div>
+                          <Badge variant={element.is_active ? 'active' : 'secondary'}>
+                            {element.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <Badge variant="outline">{element.price_type}</Badge>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => openDesignElementModal(element)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteDesignItem(element)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Cake className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>No design elements configured</p>
+                    <p className="text-sm">Add elements that AI should detect and price</p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
+      </div>
+
       {/* Outlet Form Modal */}
       <FormModal
         open={isOutletFormOpen}
@@ -610,6 +1112,233 @@ const CompanyProfile = () => {
         variant="destructive"
         onConfirm={handleDeleteOutlet}
         isLoading={isDeletingOutlet}
+      />
+
+      {/* Weight Pricing Modal */}
+      <FormModal
+        open={isWeightModalOpen}
+        onOpenChange={setIsWeightModalOpen}
+        title={editingWeight ? 'Edit Weight Pricing' : 'Add Weight Pricing'}
+      >
+        <form onSubmit={handleSubmitWeight} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="weightGrams">Weight</Label>
+            <Select
+              value={String(weightFormData.weight_grams)}
+              onValueChange={(value) => setWeightFormData(prev => ({ ...prev, weight_grams: parseInt(value) }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select weight" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="250">250g</SelectItem>
+                <SelectItem value="500">500g</SelectItem>
+                <SelectItem value="750">750g</SelectItem>
+                <SelectItem value="1000">1kg</SelectItem>
+                <SelectItem value="1500">1.5kg</SelectItem>
+                <SelectItem value="2000">2kg</SelectItem>
+                <SelectItem value="2500">2.5kg</SelectItem>
+                <SelectItem value="3000">3kg</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="basePrice">Base Price (₹)</Label>
+            <Input
+              id="basePrice"
+              type="number"
+              min="0"
+              value={weightFormData.base_price}
+              onChange={(e) => setWeightFormData(prev => ({ ...prev, base_price: parseFloat(e.target.value) || 0 }))}
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => setIsWeightModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="gradient" disabled={isCreatingWeight || isUpdatingWeight}>
+              {isCreatingWeight || isUpdatingWeight ? 'Saving...' : editingWeight ? 'Update' : 'Add'}
+            </Button>
+          </div>
+        </form>
+      </FormModal>
+
+      {/* Flavor Pricing Modal */}
+      <FormModal
+        open={isFlavorModalOpen}
+        onOpenChange={setIsFlavorModalOpen}
+        title={editingFlavor ? 'Edit Flavor Pricing' : 'Add Flavor Pricing'}
+      >
+        <form onSubmit={handleSubmitFlavor} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="flavorName">Flavor Name</Label>
+            <Input
+              id="flavorName"
+              value={flavorFormData.flavor_name}
+              onChange={(e) => setFlavorFormData(prev => ({ ...prev, flavor_name: e.target.value }))}
+              placeholder="e.g., Chocolate, Red Velvet"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="additionalPrice">Additional Price (₹)</Label>
+            <Input
+              id="additionalPrice"
+              type="number"
+              min="0"
+              value={flavorFormData.additional_price}
+              onChange={(e) => setFlavorFormData(prev => ({ ...prev, additional_price: parseFloat(e.target.value) || 0 }))}
+            />
+            <p className="text-xs text-muted-foreground">Set to 0 for no extra charge</p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => setIsFlavorModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="gradient" disabled={isCreatingFlavor || isUpdatingFlavor}>
+              {isCreatingFlavor || isUpdatingFlavor ? 'Saving...' : editingFlavor ? 'Update' : 'Add'}
+            </Button>
+          </div>
+        </form>
+      </FormModal>
+
+      {/* Design Element Modal */}
+      <FormModal
+        open={isDesignElementModalOpen}
+        onOpenChange={setIsDesignElementModalOpen}
+        title={editingDesignElement ? 'Edit Design Element' : 'Add Design Element'}
+      >
+        <form onSubmit={handleSubmitDesignElement} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="elementKey">Element Type</Label>
+            <Select
+              value={designFormData.element_key}
+              onValueChange={(value) => {
+                const found = predefinedDesignElements.find(e => e.key === value);
+                setDesignFormData(prev => ({
+                  ...prev,
+                  element_key: value,
+                  element_label: found?.label || prev.element_label
+                }));
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select element type" />
+              </SelectTrigger>
+              <SelectContent>
+                {predefinedDesignElements.map((elem) => (
+                  <SelectItem key={elem.key} value={elem.key}>
+                    {elem.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="elementLabel">Display Label</Label>
+            <Input
+              id="elementLabel"
+              value={designFormData.element_label}
+              onChange={(e) => setDesignFormData(prev => ({ ...prev, element_label: e.target.value }))}
+              placeholder="Label shown to customers"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="elementPrice">Price (₹)</Label>
+            <Input
+              id="elementPrice"
+              type="number"
+              min="0"
+              value={designFormData.price}
+              onChange={(e) => setDesignFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Price Type</Label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="priceType"
+                  checked={designFormData.price_type === 'fixed'}
+                  onChange={() => setDesignFormData(prev => ({ ...prev, price_type: 'fixed' }))}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Fixed price</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="priceType"
+                  checked={designFormData.price_type === 'per_unit'}
+                  onChange={() => setDesignFormData(prev => ({ ...prev, price_type: 'per_unit' }))}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">Per unit</span>
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {designFormData.price_type === 'per_unit'
+                ? 'Price multiplied by quantity (e.g., name letters, macarons)'
+                : 'One-time charge regardless of quantity'}
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => setIsDesignElementModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="gradient" disabled={isCreatingElement || isUpdatingElement}>
+              {isCreatingElement || isUpdatingElement ? 'Saving...' : editingDesignElement ? 'Update' : 'Add'}
+            </Button>
+          </div>
+        </form>
+      </FormModal>
+
+      {/* Delete Weight Confirmation */}
+      <ConfirmDialog
+        open={!!deleteWeightItem}
+        onOpenChange={() => setDeleteWeightItem(null)}
+        title="Delete Weight Pricing"
+        description={`Are you sure you want to delete pricing for ${deleteWeightItem ? formatWeight(deleteWeightItem.weight_grams) : ''}?`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteWeight}
+        isLoading={isDeletingWeight}
+      />
+
+      {/* Delete Flavor Confirmation */}
+      <ConfirmDialog
+        open={!!deleteFlavorItem}
+        onOpenChange={() => setDeleteFlavorItem(null)}
+        title="Delete Flavor Pricing"
+        description={`Are you sure you want to delete "${deleteFlavorItem?.flavor_name}" flavor?`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteFlavor}
+        isLoading={isDeletingFlavor}
+      />
+
+      {/* Delete Design Element Confirmation */}
+      <ConfirmDialog
+        open={!!deleteDesignItem}
+        onOpenChange={() => setDeleteDesignItem(null)}
+        title="Delete Design Element"
+        description={`Are you sure you want to delete "${deleteDesignItem?.element_label}"?`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteDesignElement}
+        isLoading={isDeletingElement}
       />
     </div>
   );

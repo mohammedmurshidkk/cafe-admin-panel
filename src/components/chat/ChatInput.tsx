@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { VoiceRecorder } from './VoiceRecorder';
@@ -17,6 +17,11 @@ interface ChatInputProps {
   disabled?: boolean;
 }
 
+export interface ChatInputHandle {
+  setMessage: (message: string) => void;
+  focus: () => void;
+}
+
 type MediaType = 'image' | 'video' | 'document';
 
 interface PendingMedia {
@@ -25,23 +30,41 @@ interface PendingMedia {
   preview?: string;
 }
 
-export const ChatInput = ({ sessionId, disabled }: ChatInputProps) => {
+export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ sessionId, disabled }, ref) => {
   const [message, setMessage] = useState('');
   const [pendingMedia, setPendingMedia] = useState<PendingMedia | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Expose methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    setMessage: (msg: string) => {
+      setMessage(msg);
+      // Focus and scroll to end of textarea
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        if (textareaRef.current) {
+          textareaRef.current.selectionStart = msg.length;
+          textareaRef.current.selectionEnd = msg.length;
+        }
+      }, 0);
+    },
+    focus: () => {
+      textareaRef.current?.focus();
+    }
+  }));
+
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
   const [uploadMedia] = useUploadMediaMutation();
 
   const handleSendText = async () => {
-    if (!message.trim() || isSending) return;
+    if (!message?.trim() || isSending) return;
 
     try {
       await sendMessage({
         sessionId,
-        message: { type: 'text', content: message.trim() },
+        message: { type: 'text', content: message?.trim() || '' },
       }).unwrap();
       setMessage('');
       textareaRef.current?.focus();
@@ -65,7 +88,7 @@ export const ChatInput = ({ sessionId, disabled }: ChatInputProps) => {
         message: {
           type: pendingMedia.type,
           media_id: uploadResult.data.media_id,
-          caption: message.trim() || undefined,
+          caption: message?.trim() || undefined,
           filename: pendingMedia.type === 'document' ? pendingMedia.file.name : undefined,
         },
       }).unwrap();
@@ -247,7 +270,7 @@ export const ChatInput = ({ sessionId, disabled }: ChatInputProps) => {
         />
 
         {/* Send / Voice Button */}
-        {message.trim() || pendingMedia ? (
+        {message?.trim() || pendingMedia ? (
           <Button
             size="icon"
             className="h-10 w-10 rounded-full flex-shrink-0"
@@ -262,4 +285,6 @@ export const ChatInput = ({ sessionId, disabled }: ChatInputProps) => {
       </div>
     </div>
   );
-};
+});
+
+ChatInput.displayName = 'ChatInput';
