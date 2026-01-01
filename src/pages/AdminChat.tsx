@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SessionList } from '@/components/chat/SessionList';
 import { ChatView } from '@/components/chat/ChatView';
@@ -5,15 +6,25 @@ import { useChatWebSocket } from '@/hooks/useChatWebSocket';
 import { MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const LAST_CHAT_SESSION_KEY = 'lastChatSessionId';
+
 const AdminChat = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const selectedSessionId = sessionId || null;
 
+  // Persist last active session to localStorage
+  useEffect(() => {
+    if (sessionId) {
+      localStorage.setItem(LAST_CHAT_SESSION_KEY, sessionId);
+    }
+  }, [sessionId]);
+
   const handleSelectSession = (id: string | null) => {
     if (id) {
       navigate(`/chat/${id}`);
     } else {
+      localStorage.removeItem(LAST_CHAT_SESSION_KEY);
       navigate('/chat');
     }
   };

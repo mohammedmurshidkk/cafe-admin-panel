@@ -107,8 +107,6 @@ const Addons = () => {
     }
   };
 
-  console.log('##### editingAddon', groupName)
-
   const handleSubmitAddon = async (e: React.FormEvent) => {
     e.preventDefault();
     try {

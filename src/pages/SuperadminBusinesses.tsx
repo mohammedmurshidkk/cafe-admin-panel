@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { setViewingBusiness } from '@/store/authSlice';
 import { RootState } from '@/store/store';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -19,10 +20,12 @@ import {
 } from '@/store/api/superadminApi';
 import { SuperadminBusiness, SuperadminBusinessFormData } from '@/types';
 import { formatDate } from '@/utils/formatters';
-import { Plus, Search, Pencil, Power } from 'lucide-react';
+import { Plus, Search, Pencil, Power, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SuperadminBusinesses = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
   const [search, setSearch] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -84,11 +87,11 @@ const SuperadminBusinesses = () => {
   const handleCreateAdmin = async (name: string, email: string, password: string) => {
     if (!newBusinessForAdmin) return;
     try {
-      await createAdmin({ 
+      await createAdmin({
         name,
-        email, 
-        password, 
-        business_id: newBusinessForAdmin.id 
+        email,
+        password,
+        business_id: newBusinessForAdmin.id
       }).unwrap();
       toast.success('Admin user created successfully');
       setIsAdminModalOpen(false);
@@ -96,6 +99,11 @@ const SuperadminBusinesses = () => {
     } catch (error: any) {
       toast.error(error?.data?.error || 'Failed to create admin');
     }
+  };
+
+  const handleViewAsBusiness = (business: SuperadminBusiness) => {
+    dispatch(setViewingBusiness({ id: business.id, name: business.name }));
+    navigate('/dashboard');
   };
 
   const columns = [
@@ -129,11 +137,22 @@ const SuperadminBusinesses = () => {
       header: 'Created',
       render: (business: SuperadminBusiness) => formatDate(business.created_at),
     },
-    { 
-      key: 'actions' as const, 
+    {
+      key: 'actions' as const,
       header: 'Actions',
       render: (business: SuperadminBusiness) => (
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            title="View as Admin"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewAsBusiness(business);
+            }}
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"

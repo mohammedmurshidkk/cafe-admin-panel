@@ -23,8 +23,6 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
   const { data, isLoading } = useGetSessionMessagesQuery({ sessionId });
   const [markAsRead] = useMarkSessionAsReadMutation();
 
-  console.log('##### ___ ', data)
-
   const session = data?.data?.session;
   const customer = data?.data?.customer;
   const messages = data?.data?.messages || [];

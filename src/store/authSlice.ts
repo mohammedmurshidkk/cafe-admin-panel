@@ -1,21 +1,30 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { User } from '@/types';
 
+interface ViewingBusiness {
+  id: string;
+  name: string;
+}
+
 interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  viewingBusiness: ViewingBusiness | null;
 }
 
 const getInitialState = (): AuthState => {
   const token = localStorage.getItem('token');
   const userStr = localStorage.getItem('user');
+  const viewingBusinessStr = localStorage.getItem('viewingBusiness');
   const user = userStr ? JSON.parse(userStr) : null;
-  
+  const viewingBusiness = viewingBusinessStr ? JSON.parse(viewingBusinessStr) : null;
+
   return {
     user,
     token,
     isAuthenticated: !!token,
+    viewingBusiness,
   };
 };
 
@@ -34,11 +43,21 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
+      state.viewingBusiness = null;
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      localStorage.removeItem('viewingBusiness');
+    },
+    setViewingBusiness: (state, action: PayloadAction<ViewingBusiness>) => {
+      state.viewingBusiness = action.payload;
+      localStorage.setItem('viewingBusiness', JSON.stringify(action.payload));
+    },
+    clearViewingBusiness: (state) => {
+      state.viewingBusiness = null;
+      localStorage.removeItem('viewingBusiness');
     },
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, logout, setViewingBusiness, clearViewingBusiness } = authSlice.actions;
 export default authSlice.reducer;

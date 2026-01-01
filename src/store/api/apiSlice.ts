@@ -8,9 +8,16 @@ const API_URL = import.meta.env.VITE_API_URL;
 const baseQuery = fetchBaseQuery({
   baseUrl: `${API_URL}/api`,
   prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as RootState).auth.token;
+    const state = getState() as RootState;
+    const token = state.auth.token;
+    const viewingBusiness = state.auth.viewingBusiness;
+
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
+    }
+    // When superadmin is viewing a business, send the business ID
+    if (viewingBusiness?.id) {
+      headers.set('X-Business-Id', viewingBusiness.id);
     }
     return headers;
   },

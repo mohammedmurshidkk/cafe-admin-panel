@@ -39,13 +39,26 @@ export const BottomNav = () => {
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-elevated z-50">
       <div className="flex items-center justify-around h-16 px-2">
         {mainNavItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          // For chat, restore last active session if available
+          const isChatItem = item.path === '/chat';
+          const isOnChatSession = location.pathname.startsWith('/chat/');
+          const lastChatSession = localStorage.getItem('lastChatSessionId');
+          const targetPath = isChatItem
+            ? isOnChatSession
+              ? location.pathname
+              : lastChatSession
+                ? `/chat/${lastChatSession}`
+                : '/chat'
+            : item.path;
+          const isActive = isChatItem
+            ? location.pathname.startsWith('/chat')
+            : location.pathname === item.path;
           const Icon = item.icon;
-          
+
           return (
             <NavLink
               key={item.path}
-              to={item.path}
+              to={targetPath}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors",
                 isActive 

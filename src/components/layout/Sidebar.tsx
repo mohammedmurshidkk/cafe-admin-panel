@@ -63,13 +63,26 @@ export const Sidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          // For chat, restore last active session if available
+          const isChatItem = item.path === '/chat';
+          const isOnChatSession = location.pathname.startsWith('/chat/');
+          const lastChatSession = localStorage.getItem('lastChatSessionId');
+          const targetPath = isChatItem
+            ? isOnChatSession
+              ? location.pathname
+              : lastChatSession
+                ? `/chat/${lastChatSession}`
+                : '/chat'
+            : item.path;
+          const isActive = isChatItem
+            ? location.pathname.startsWith('/chat')
+            : location.pathname === item.path;
           const Icon = item.icon;
-          
+
           return (
             <NavLink
               key={item.path}
-              to={item.path}
+              to={targetPath}
               className={cn(
                 "nav-item",
                 isActive && "nav-item-active",
