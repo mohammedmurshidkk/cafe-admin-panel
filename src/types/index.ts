@@ -199,6 +199,9 @@ export interface CategoryFormData {
   category_note?: string;
   custom_text_prompt?: string;
   display_order?: number;
+  allows_custom_weight?: boolean
+  custom_weight_base_size?: string
+  custom_weight_min_grams?: number
 }
 
 export interface CategoriesResponse {

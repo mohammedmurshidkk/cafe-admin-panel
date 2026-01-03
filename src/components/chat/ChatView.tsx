@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { useGetSessionMessagesQuery, useMarkSessionAsReadMutation } from '@/store/api/chatApi';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useGetSessionMessagesQuery, useLazyGetSessionMessagesQuery, useMarkSessionAsReadMutation } from '@/store/api/chatApi';
+import { ChatMessage } from '@/types';
 import { useGetPendingQuoteQuery, useCancelCakeQuoteMutation } from '@/store/api/cakePricingApi';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput, ChatInputHandle } from './ChatInput';
@@ -20,6 +21,8 @@ interface ChatViewProps {
 
 export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
@@ -27,7 +30,16 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
   const [quoteExpanded, setQuoteExpanded] = useState(true);
   const [quoteDismissed, setQuoteDismissed] = useState(false);
 
+  // Infinite scroll states
+  const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [initialScrollDone, setInitialScrollDone] = useState(false);
+  const [isUserNearBottom, setIsUserNearBottom] = useState(true);
+
   const { data, isLoading } = useGetSessionMessagesQuery({ sessionId });
+  const [fetchMoreMessages] = useLazyGetSessionMessagesQuery();
   const [markAsRead] = useMarkSessionAsReadMutation();
 
   // Cake quote API hooks
@@ -42,21 +54,139 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
   const customer = data?.data?.customer;
   const messages = data?.data?.messages || [];
 
+  // Initial load - Set messages from page 1 (which should be newest 50)
+  useEffect(() => {
+    if (data?.data?.messages && currentPage === 1) {
+      // Create a new array and reverse to show oldest -> newest (bottom)
+      // Assumption: API returns [Newest, ..., Oldest] (descending order)
+      const sortedMessages = [...data.data.messages].reverse();
+      setAllMessages(sortedMessages);
+      setHasMore(data.data.pagination.hasMore);
+      setInitialScrollDone(true);
+    }
+  }, [data, currentPage, sessionId]); // sessionId ensures re-run when switching back to cached session
+
+  // Track if user is near bottom (for auto-scroll decision)
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const threshold = 150; // pixels from bottom
+      const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+      setIsUserNearBottom(nearBottom);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Handle real-time updates (new messages appearing in page 1 cache)
+  useEffect(() => {
+    if (data?.data?.messages && allMessages.length > 0) {
+      const latestFromCache = data.data.messages[0]; // Assuming newest is first
+      const latestLocal = allMessages[allMessages.length - 1]; // Newest is last
+
+      if (latestFromCache && latestLocal && latestFromCache.id !== latestLocal.id) {
+        // Find all new messages that are not in our local state
+        const localIds = new Set(allMessages.map(m => m.id));
+        const newMessages = data.data.messages.filter(m => !localIds.has(m.id)).reverse();
+
+        if (newMessages.length > 0) {
+          setAllMessages(prev => [...prev, ...newMessages]);
+          // Only auto-scroll if user is near bottom (WhatsApp behavior)
+          if (isUserNearBottom) {
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }
+        }
+      }
+    }
+  }, [data, allMessages, isUserNearBottom]);
+
   useEffect(() => {
     if (sessionId) {
       markAsRead(sessionId);
     }
   }, [sessionId, markAsRead]);
 
+  // Initial scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (initialScrollDone && messagesEndRef.current && currentPage === 1) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'auto' });
+    }
+  }, [initialScrollDone, sessionId]);
 
-  // Reset quote UI state when session changes
+  // Reset state when session changes
   useEffect(() => {
     setQuoteDismissed(false);
     setQuoteExpanded(true);
+    setCurrentPage(1);
+    setHasMore(false);
+    setAllMessages([]);
+    setInitialScrollDone(false);
+    setIsUserNearBottom(true);
   }, [sessionId]);
+
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    const scrollContainer = messagesContainerRef.current;
+    const oldScrollHeight = scrollContainer?.scrollHeight || 0;
+    const oldScrollTop = scrollContainer?.scrollTop || 0;
+
+    const nextPage = currentPage + 1;
+
+    try {
+      const result = await fetchMoreMessages({ sessionId, page: nextPage }).unwrap();
+
+      if (result.data?.messages) {
+        // Reverse incoming older messages: [Oldest ... Older]
+        const olderMessages = [...result.data.messages].reverse();
+
+        setAllMessages(prev => [...olderMessages, ...prev]);
+        setHasMore(result.data.pagination.hasMore);
+        setCurrentPage(nextPage);
+
+        // Restore scroll position
+        requestAnimationFrame(() => {
+          if (scrollContainer) {
+            const newScrollHeight = scrollContainer.scrollHeight;
+            const heightDifference = newScrollHeight - oldScrollHeight;
+            scrollContainer.scrollTop = heightDifference + oldScrollTop;
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load more messages:', error);
+      toast.error('Failed to load older messages');
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [currentPage, hasMore, isLoadingMore, sessionId, fetchMoreMessages]);
+
+  // Intersection Observer for loading more - only after initial load confirms hasMore
+  useEffect(() => {
+    // Don't set up observer until initial load is done and we know there's more
+    if (!initialScrollDone || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore) {
+          handleLoadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '50px' }
+    );
+
+    if (loadMoreTriggerRef.current) {
+      observer.observe(loadMoreTriggerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingMore, handleLoadMore, initialScrollDone]);
 
   const handleInsertQuoteMessage = () => {
     if (pendingQuote && chatInputRef.current) {
@@ -81,7 +211,7 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
 
   const displayName = customer?.name || customer?.phone || 'Unknown';
 
-  if (isLoading) {
+  if (isLoading && currentPage === 1) {
     return (
       <div className={cn('flex flex-col h-full bg-background', className)}>
         <div className="p-4 border-b border-border flex items-center gap-3">
@@ -145,14 +275,24 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
       </div>
 
       {/* Messages - Scrollable */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-muted/30 scroll-smooth">
-        {messages.length === 0 ? (
+      <div
+        ref={messagesContainerRef}
+        className="flex-1 min-h-0 overflow-y-auto p-4 bg-muted/30 scroll-smooth relative"
+      >
+        {/* Loading spinner for older messages */}
+        <div ref={loadMoreTriggerRef} className="py-2 flex justify-center w-full">
+          {isLoadingMore && (
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          )}
+        </div>
+
+        {allMessages.length === 0 && !isLoading ? (
           <div className="h-full flex items-center justify-center text-muted-foreground">
             <p>No messages yet</p>
           </div>
         ) : (
           <>
-            {messages.map((message) => (
+            {allMessages.map((message) => (
               <MessageBubble
                 key={message.id}
                 message={message}

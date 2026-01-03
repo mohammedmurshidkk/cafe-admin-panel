@@ -138,6 +138,7 @@ export const chatApi = apiSlice.injectEndpoints({
 export const {
   useGetChatSessionsQuery,
   useGetSessionMessagesQuery,
+  useLazyGetSessionMessagesQuery,
   useSendMessageMutation,
   useUploadMediaMutation,
   useToggleChatAiPauseMutation,

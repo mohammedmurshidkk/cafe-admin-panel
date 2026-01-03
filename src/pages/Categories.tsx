@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { 
   useGetCategoriesQuery,
   useCreateCategoryMutation,
@@ -25,6 +26,9 @@ const defaultFormData: CategoryFormData = {
   custom_text_prompt: '',
   category_note: '',
   display_order: 0,
+  allows_custom_weight: false,
+  custom_weight_base_size: '1kg',
+  custom_weight_min_grams: 500,
 };
 
 const Categories = () => {
@@ -57,6 +61,9 @@ const Categories = () => {
         custom_text_prompt: category.custom_text_prompt || '',
         category_note: (category as any).category_note || '',
         display_order: (category as any).display_order || 0,
+        allows_custom_weight: (category as any).allows_custom_weight || false,
+        custom_weight_base_size: (category as any).custom_weight_base_size || '1kg',
+        custom_weight_min_grams: (category as any).custom_weight_min_grams || 500,
       });
       setImagePreview(category.image_url || null);
     } else {
@@ -273,6 +280,64 @@ const Categories = () => {
               placeholder="Add a custom note for this category..."
               rows={3}
             />
+          </div>
+
+          {/* Custom Weight Pricing */}
+          <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="allows_custom_weight">Allow Custom Weights</Label>
+                <p className="text-xs text-muted-foreground">
+                  Enable custom weight ordering for this category
+                </p>
+              </div>
+              <Switch
+                id="allows_custom_weight"
+                checked={formData.allows_custom_weight || false}
+                onCheckedChange={(checked) => setFormData(prev => ({ ...prev, allows_custom_weight: checked }))}
+              />
+            </div>
+
+            {formData.allows_custom_weight && (
+              <div className="space-y-4 pt-2 border-t">
+                <div className="space-y-2">
+                  <Label htmlFor="custom_weight_base_size">Base Size for Pricing</Label>
+                  <Input
+                    id="custom_weight_base_size"
+                    value={formData.custom_weight_base_size || '1kg'}
+                    onChange={(e) => setFormData(prev => ({ ...prev, custom_weight_base_size: e.target.value }))}
+                    placeholder="1kg"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Price calculation uses this size's price × weight
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="custom_weight_min_grams">Minimum Weight (grams)</Label>
+                  <Input
+                    id="custom_weight_min_grams"
+                    type="number"
+                    min="0"
+                    value={formData.custom_weight_min_grams || 500}
+                    onChange={(e) => setFormData(prev => ({ ...prev, custom_weight_min_grams: parseInt(e.target.value) || 0 }))}
+                    placeholder="500"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Customers cannot order below this weight
+                  </p>
+                </div>
+
+                <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Pricing Example:</strong> Customers can order any weight ≥ {formData.custom_weight_min_grams || 500}g.
+                    Price = {formData.custom_weight_base_size || '1kg'} price × weight.
+                    <br />
+                    Example: If {formData.custom_weight_base_size || '1kg'} = ₹800, then 1.5kg = ₹1200, 2kg = ₹1600
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
