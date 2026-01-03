@@ -244,6 +244,11 @@ export interface Outlet {
   address: string;
   phone: string;
   is_active: boolean;
+  opening_time?: string;
+  closing_time?: string;
+  opening_buffer_minutes?: number;
+  closing_buffer_minutes?: number;
+  opening_days?: string[];
 }
 
 export interface Business {

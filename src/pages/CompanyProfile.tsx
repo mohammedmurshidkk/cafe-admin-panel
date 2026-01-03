@@ -16,7 +16,8 @@ import {
   Settings,
   Upload,
   Cake,
-  GripVertical
+  GripVertical,
+  Clock
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -109,7 +110,17 @@ const CompanyProfile = () => {
   const [isOutletFormOpen, setIsOutletFormOpen] = useState(false);
   const [editingOutlet, setEditingOutlet] = useState<Outlet | null>(null);
   const [deleteOutlet, setDeleteOutlet] = useState<Outlet | null>(null);
-  const [outletData, setOutletData] = useState({ outlet_name: '', address: '', phone: '', is_active: true });
+  const [outletData, setOutletData] = useState({
+    outlet_name: '',
+    address: '',
+    phone: '',
+    is_active: true,
+    opening_time: '',
+    closing_time: '',
+    opening_buffer_minutes: 0,
+    closing_buffer_minutes: 0,
+    opening_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as string[]
+  });
 
   // Cake pricing data from API
   const cakePricingConfig = cakePricingData?.data;
@@ -204,10 +215,25 @@ const CompanyProfile = () => {
         address: outlet.address,
         phone: outlet.phone,
         is_active: outlet.is_active,
+        opening_time: outlet.opening_time || '',
+        closing_time: outlet.closing_time || '',
+        opening_buffer_minutes: outlet.opening_buffer_minutes || 0,
+        closing_buffer_minutes: outlet.closing_buffer_minutes || 0,
+        opening_days: outlet.opening_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
       });
     } else {
       setEditingOutlet(null);
-      setOutletData({ outlet_name: '', address: '', phone: '', is_active: true });
+      setOutletData({
+        outlet_name: '',
+        address: '',
+        phone: '',
+        is_active: true,
+        opening_time: '',
+        closing_time: '',
+        opening_buffer_minutes: 0,
+        closing_buffer_minutes: 0,
+        opening_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+      });
     }
     setIsOutletFormOpen(true);
   };
@@ -582,8 +608,7 @@ const CompanyProfile = () => {
             />
           </div>
         </div>
-
-        {/* Delivery Settings - Hidden
+        
         {supportsDelivery && (
           <div className="mt-6 p-4 border border-border rounded-lg space-y-4">
             <h4 className="font-medium text-sm flex items-center gap-2">
@@ -627,7 +652,6 @@ const CompanyProfile = () => {
             </div>
           </div>
         )}
-        */}
 
         {/* Minimum Wait Time - Hidden
         <div className="mt-6 space-y-2">
@@ -665,7 +689,7 @@ const CompanyProfile = () => {
         {data?.business.outlets?.length ? (
           <div className="space-y-3">
             {data.business.outlets.map((outlet) => (
-              <div 
+              <div
                 key={outlet.id}
                 className="flex items-center justify-between p-4 rounded-lg bg-muted/50"
               >
@@ -680,14 +704,30 @@ const CompanyProfile = () => {
                     </div>
                     <p className="text-sm text-muted-foreground">{outlet.address}</p>
                     <p className="text-sm text-muted-foreground">{outlet.phone}</p>
+                    {outlet.opening_time && outlet.closing_time && (
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>{outlet.opening_time} - {outlet.closing_time}</span>
+                        {(outlet.opening_buffer_minutes > 0 || outlet.closing_buffer_minutes > 0) && (
+                          <span className="text-xs">
+                            (buffer: +{outlet.opening_buffer_minutes}/-{outlet.closing_buffer_minutes}min)
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {outlet.opening_days && outlet.opening_days.length < 7 && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {outlet.opening_days.map(d => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="ghost" size="icon" onClick={() => openOutletForm(outlet)}>
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     onClick={() => setDeleteOutlet(outlet)}
                     className="text-destructive hover:text-destructive"
@@ -1080,6 +1120,95 @@ const CompanyProfile = () => {
               onChange={(e) => setOutletData(prev => ({ ...prev, phone: e.target.value }))}
               required
             />
+          </div>
+
+          {/* Operating Hours Section */}
+          <div className="border border-border rounded-lg p-4 space-y-4">
+            <h4 className="font-medium text-sm flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Operating Hours
+            </h4>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="openingTime">Opening Time</Label>
+                <Input
+                  id="openingTime"
+                  type="time"
+                  value={outletData.opening_time}
+                  onChange={(e) => setOutletData(prev => ({ ...prev, opening_time: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="closingTime">Closing Time</Label>
+                <Input
+                  id="closingTime"
+                  type="time"
+                  value={outletData.closing_time}
+                  onChange={(e) => setOutletData(prev => ({ ...prev, closing_time: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="openingBuffer">Buffer after opening (min)</Label>
+                <Input
+                  id="openingBuffer"
+                  type="number"
+                  min="0"
+                  value={outletData.opening_buffer_minutes}
+                  onChange={(e) => setOutletData(prev => ({ ...prev, opening_buffer_minutes: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="closingBuffer">Buffer before closing (min)</Label>
+                <Input
+                  id="closingBuffer"
+                  type="number"
+                  min="0"
+                  value={outletData.closing_buffer_minutes}
+                  onChange={(e) => setOutletData(prev => ({ ...prev, closing_buffer_minutes: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+            </div>
+
+            {(outletData.opening_time && outletData.closing_time) && (
+              <p className="text-xs text-muted-foreground">
+                Orders accepted: {outletData.opening_time} + {outletData.opening_buffer_minutes}min to {outletData.closing_time} - {outletData.closing_buffer_minutes}min
+              </p>
+            )}
+
+            <div className="space-y-2">
+              <Label>Open Days</Label>
+              <div className="flex flex-wrap gap-2">
+                {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                  <label
+                    key={day}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md cursor-pointer text-sm border transition-colors",
+                      outletData.opening_days.includes(day)
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted/50 border-border hover:bg-muted"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={outletData.opening_days.includes(day)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setOutletData(prev => ({ ...prev, opening_days: [...prev.opening_days, day] }));
+                        } else {
+                          setOutletData(prev => ({ ...prev, opening_days: prev.opening_days.filter(d => d !== day) }));
+                        }
+                      }}
+                      className="sr-only"
+                    />
+                    {day.charAt(0).toUpperCase() + day.slice(1, 3)}
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center space-x-2">
