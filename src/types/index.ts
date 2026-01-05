@@ -84,6 +84,7 @@ export interface OrderItem {
 }
 
 export interface Order {
+  delivery_fee: number;
   delivery_latitude?: string | null;
   delivery_longitude?: string |null
   id: string;
@@ -271,6 +272,11 @@ export interface Business {
   minimum_wait_minutes?: number;
   outlets: Outlet[];
   phone?: string;
+  free_radius_meters?:number
+  minimum_delivery_charge?:number
+  minimum_charge_distance_meters?:number
+  increment_per_km?:number
+  max_delivery_radius_meters?:number
 }
 
 export interface BusinessResponse {

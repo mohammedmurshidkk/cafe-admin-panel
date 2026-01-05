@@ -143,9 +143,17 @@ export const OrderDetailModal = ({
               </div>
             ))}
           </div>
-          <div className="flex justify-between items-center pt-4 mt-4 border-t-2 border-gray-200">
-            <p className="font-semibold text-gray-600">Total</p>
-            <p className="font-bold text-xl text-primary">{formatCurrency(order.total)}</p>
+          <div className="pt-4 mt-4 border-t-2 border-gray-200 space-y-2">
+            {order.fulfillment_type === 'delivery' && order.delivery_fee > 0 && (
+              <div className="flex justify-between items-center text-sm">
+                <p className="text-muted-foreground">Delivery Charge</p>
+                <p className="font-medium">{formatCurrency(order.delivery_fee)}</p>
+              </div>
+            )}
+            <div className="flex justify-between items-center">
+              <p className="font-semibold text-gray-600">Total</p>
+              <p className="font-bold text-xl text-primary">{formatCurrency(order.total)}</p>
+            </div>
           </div>
         </div>
 

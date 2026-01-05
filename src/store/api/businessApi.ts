@@ -16,6 +16,11 @@ interface UpdateBusinessData {
   free_delivery_above?: number;
   delivery_radius_km?: number;
   minimum_wait_minutes?: number;
+  free_radius_meters?:number
+  minimum_delivery_charge?:number
+  minimum_charge_distance_meters?:number
+  increment_per_km?:number
+  max_delivery_radius_meters?:number
 }
 
 interface OutletData {

@@ -101,9 +101,12 @@ const CompanyProfile = () => {
   const [customerSupportPhone, setCustomerSupportPhone] = useState('');
   const [supportsDelivery, setSupportsDelivery] = useState(true);
   const [supportsTakeaway, setSupportsTakeaway] = useState(true);
-  const [deliveryFee, setDeliveryFee] = useState(0);
+  const [freeRadiusMeters, setFreeRadiusMeters] = useState(0);
+  const [minimumDeliveryCharge, setMinimumDeliveryCharge] = useState(0);
+  const [minimumChargeDistanceMeters, setMinimumChargeDistanceMeters] = useState(0);
+  const [incrementPerKm, setIncrementPerKm] = useState(0);
+  const [maxDeliveryRadiusMeters, setMaxDeliveryRadiusMeters] = useState(0);
   const [freeDeliveryAbove, setFreeDeliveryAbove] = useState(0);
-  const [deliveryRadiusKm, setDeliveryRadiusKm] = useState(0);
   const [minimumWaitMinutes, setMinimumWaitMinutes] = useState(30);
 
   // Outlet states
@@ -161,9 +164,12 @@ const CompanyProfile = () => {
       setCustomerSupportPhone(data.business.customer_support_phone || '');
       setSupportsDelivery(data.business.supports_delivery);
       setSupportsTakeaway(data.business.supports_takeaway);
-      setDeliveryFee(data.business.delivery_fee || 0);
+      setFreeRadiusMeters(data.business.free_radius_meters || 0);
+      setMinimumDeliveryCharge(data.business.minimum_delivery_charge || 0);
+      setMinimumChargeDistanceMeters(data.business.minimum_charge_distance_meters || 0);
+      setIncrementPerKm(data.business.increment_per_km || 0);
+      setMaxDeliveryRadiusMeters(data.business.max_delivery_radius_meters || 0);
       setFreeDeliveryAbove(data.business.free_delivery_above || 0);
-      setDeliveryRadiusKm(data.business.delivery_radius_km || 0);
       setMinimumWaitMinutes(data.business.minimum_wait_minutes || 30);
     }
   }, [data]);
@@ -181,9 +187,12 @@ const CompanyProfile = () => {
         customer_support_phone: customerSupportPhone,
         supports_delivery: supportsDelivery,
         supports_takeaway: supportsTakeaway,
-        delivery_fee: deliveryFee,
+        free_radius_meters: freeRadiusMeters,
+        minimum_delivery_charge: minimumDeliveryCharge,
+        minimum_charge_distance_meters: minimumChargeDistanceMeters,
+        increment_per_km: incrementPerKm,
+        max_delivery_radius_meters: maxDeliveryRadiusMeters,
         free_delivery_above: freeDeliveryAbove,
-        delivery_radius_km: deliveryRadiusKm,
         minimum_wait_minutes: minimumWaitMinutes,
       }).unwrap();
       toast.success('Profile updated successfully');
@@ -617,14 +626,55 @@ const CompanyProfile = () => {
             </h4>
             <div className="grid md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="deliveryFee">Delivery Fee</Label>
+                <Label htmlFor="freeRadiusMeters">Free Delivery Radius (m)</Label>
                 <Input
-                  id="deliveryFee"
+                  id="freeRadiusMeters"
+                  type="number"
+                  min="0"
+                  value={freeRadiusMeters}
+                  onChange={(e) => setFreeRadiusMeters(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="minimumDeliveryCharge">Minimum Delivery Charge</Label>
+                <Input
+                  id="minimumDeliveryCharge"
                   type="number"
                   min="0"
                   step="0.01"
-                  value={deliveryFee}
-                  onChange={(e) => setDeliveryFee(parseFloat(e.target.value) || 0)}
+                  value={minimumDeliveryCharge}
+                  onChange={(e) => setMinimumDeliveryCharge(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="minimumChargeDistanceMeters">Min Charge Distance (m)</Label>
+                <Input
+                  id="minimumChargeDistanceMeters"
+                  type="number"
+                  min="0"
+                  value={minimumChargeDistanceMeters}
+                  onChange={(e) => setMinimumChargeDistanceMeters(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="incrementPerKm">Increment per km</Label>
+                <Input
+                  id="incrementPerKm"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={incrementPerKm}
+                  onChange={(e) => setIncrementPerKm(parseFloat(e.target.value) || 0)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxDeliveryRadiusMeters">Max Delivery Radius (m)</Label>
+                <Input
+                  id="maxDeliveryRadiusMeters"
+                  type="number"
+                  min="0"
+                  value={maxDeliveryRadiusMeters}
+                  onChange={(e) => setMaxDeliveryRadiusMeters(parseFloat(e.target.value) || 0)}
                 />
               </div>
               <div className="space-y-2">
@@ -636,17 +686,6 @@ const CompanyProfile = () => {
                   step="0.01"
                   value={freeDeliveryAbove}
                   onChange={(e) => setFreeDeliveryAbove(parseFloat(e.target.value) || 0)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="deliveryRadius">Delivery Radius (km)</Label>
-                <Input
-                  id="deliveryRadius"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={deliveryRadiusKm}
-                  onChange={(e) => setDeliveryRadiusKm(parseFloat(e.target.value) || 0)}
                 />
               </div>
             </div>
