@@ -17,9 +17,15 @@ interface ChatInputProps {
   disabled?: boolean;
 }
 
+interface PendingQuoteData {
+  quote_id: string;
+  quote_price: number;
+}
+
 export interface ChatInputHandle {
-  setMessage: (message: string) => void;
+  setMessage: (message: string, quoteData?: PendingQuoteData) => void;
   focus: () => void;
+  clearQuoteData: () => void;
 }
 
 type MediaType = 'image' | 'video' | 'document';
@@ -33,14 +39,18 @@ interface PendingMedia {
 export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ sessionId, disabled }, ref) => {
   const [message, setMessage] = useState('');
   const [pendingMedia, setPendingMedia] = useState<PendingMedia | null>(null);
+  const [pendingQuote, setPendingQuote] = useState<PendingQuoteData | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
-    setMessage: (msg: string) => {
+    setMessage: (msg: string, quoteData?: PendingQuoteData) => {
       setMessage(msg);
+      if (quoteData) {
+        setPendingQuote(quoteData);
+      }
       // Focus and scroll to end of textarea
       setTimeout(() => {
         textareaRef.current?.focus();
@@ -52,6 +62,9 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ sessionI
     },
     focus: () => {
       textareaRef.current?.focus();
+    },
+    clearQuoteData: () => {
+      setPendingQuote(null);
     }
   }));
 
@@ -64,9 +77,18 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ sessionI
     try {
       await sendMessage({
         sessionId,
-        message: { type: 'text', content: message?.trim() || '' },
+        message: {
+          type: 'text',
+          content: message?.trim() || '',
+          // Include quote data if present
+          ...(pendingQuote && {
+            quote_id: pendingQuote.quote_id,
+            quote_price: pendingQuote.quote_price,
+          }),
+        },
       }).unwrap();
       setMessage('');
+      setPendingQuote(null); // Clear quote data after sending
       textareaRef.current?.focus();
     } catch (error: any) {
       toast.error(error?.data?.error || 'Failed to send message');

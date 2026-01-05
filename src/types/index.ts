@@ -439,6 +439,9 @@ export interface SendMessageRequest {
   media_id?: string;
   caption?: string;
   filename?: string;
+  // Quote fields - when sending a cake quote
+  quote_id?: string;
+  quote_price?: number;
 }
 
 export interface SendMessageResponse {
@@ -447,6 +450,7 @@ export interface SendMessageResponse {
   data: {
     message: ChatMessage;
     whatsapp_message_id: string;
+    quote_updated?: boolean;
   };
 }
 

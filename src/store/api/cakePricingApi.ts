@@ -35,7 +35,9 @@ export interface CakePricingConfig {
 }
 
 export interface CakeQuoteAIAnalysis {
+  price_breakdown: any;
   detected_elements: Array<{
+    unit_price: any;
     element_key: string;
     element_label: string;
     quantity: number;
@@ -51,29 +53,47 @@ export interface CakeQuoteAIAnalysis {
 
 export interface CakeQuote {
   id: string;
-  session_id: string;
+  business_id: string;
+  session_id: string | null;
+  customer_id: string | null;
   customer: {
     id: string;
     name: string;
     phone: string;
   };
-  image_url: string;
-  customer_weight?: string;
-  customer_flavor?: string;
-  ai_analysis: CakeQuoteAIAnalysis;
-  suggested_price: number;
-  suggested_message: string;
-  status: 'pending' | 'sent' | 'cancelled' | 'expired';
+  image_url: string | null;
+  customer_weight?: string | null;
+  customer_flavor?: string | null;
+  ai_analysis: CakeQuoteAIAnalysis | null;
+  suggested_price: number | null;
+  suggested_message: string | null;
+  status: 'pending' | 'sent' | 'accepted' | 'cancelled' | 'expired';
+  admin_final_message: string | null;
+  admin_final_price: number | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  // New fields for time confirmation flow
+  accepted_at: string | null;
+  requested_delivery_time: string | null;
+  requested_fulfillment_type: 'delivery' | 'takeaway' | null;
+  time_confirmed: boolean;
+  time_confirmed_at: string | null;
   created_at: string;
   expires_at: string;
 }
 
 export interface PendingCakeQuote {
   id: string;
-  suggested_message: string;
-  suggested_price: number;
-  image_url: string;
-  ai_analysis: CakeQuoteAIAnalysis;
+  type: 'price_confirmation' | 'time_confirmation';
+  // Price confirmation fields
+  suggested_message?: string;
+  suggested_price?: number;
+  image_url?: string;
+  customer_weight?: string;
+  ai_analysis?: CakeQuoteAIAnalysis;
+  // Time confirmation fields
+  requested_delivery_time?: string;
+  requested_fulfillment_type?: 'delivery' | 'takeaway';
 }
 
 // API Response types
@@ -309,6 +329,23 @@ export const cakePricingApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['CakeQuotes'],
     }),
+
+    confirmCakeQuoteTime: builder.mutation<ApiResponse<CakeQuote>, string>({
+      query: (id) => ({
+        url: `/admin/cake-quotes/${id}/confirm-time`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['CakeQuotes'],
+    }),
+
+    rejectCakeQuoteTime: builder.mutation<ApiResponse<CakeQuote>, { id: string; reason?: string }>({
+      query: ({ id, reason }) => ({
+        url: `/admin/cake-quotes/${id}/reject-time`,
+        method: 'POST',
+        body: { reason },
+      }),
+      invalidatesTags: ['CakeQuotes'],
+    }),
   }),
 });
 
@@ -338,4 +375,6 @@ export const {
   useGetPendingQuoteQuery,
   useSendCakeQuoteMutation,
   useCancelCakeQuoteMutation,
+  useConfirmCakeQuoteTimeMutation,
+  useRejectCakeQuoteTimeMutation,
 } = cakePricingApi;

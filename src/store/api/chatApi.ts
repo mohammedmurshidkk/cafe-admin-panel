@@ -46,7 +46,7 @@ export const chatApi = apiSlice.injectEndpoints({
         method: 'POST',
         body: message,
       }),
-      async onQueryStarted({ sessionId }, { dispatch, queryFulfilled }) {
+      async onQueryStarted({ sessionId, message }, { dispatch, queryFulfilled }) {
         try {
           const { data: response } = await queryFulfilled;
           // Add the new message to the cache
@@ -69,6 +69,10 @@ export const chatApi = apiSlice.injectEndpoints({
           );
           // Invalidate sessions to update last_message
           dispatch(chatApi.util.invalidateTags(['ChatSessions']));
+          // If quote was sent, invalidate CakeQuotes to refresh pending quote
+          if (message.quote_id) {
+            dispatch(chatApi.util.invalidateTags([{ type: 'CakeQuotes' as const, id: sessionId }]));
+          }
         } catch {
           // Error handling
         }
