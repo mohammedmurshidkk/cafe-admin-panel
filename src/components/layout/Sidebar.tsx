@@ -11,7 +11,8 @@ import {
   Building2,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/menu', label: 'Menu Items', icon: UtensilsCrossed },
   { path: '/categories', label: 'Categories', icon: FolderOpen },
   { path: '/addons', label: 'Addons', icon: PlusCircle },
+  { path: '/amenities', label: 'Amenities', icon: Sparkles },
   { path: '/company', label: 'Company Profile', icon: Building2 },
 ];
 

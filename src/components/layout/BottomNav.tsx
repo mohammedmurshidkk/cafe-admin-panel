@@ -13,7 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { FolderOpen, PlusCircle, Building2, LogOut, MessageSquare } from 'lucide-react';
+import { FolderOpen, PlusCircle, Building2, LogOut, MessageSquare, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const mainNavItems = [
@@ -27,6 +27,7 @@ const moreNavItems = [
   { path: '/sessions', label: 'Sessions', icon: MessageSquare },
   { path: '/categories', label: 'Categories', icon: FolderOpen },
   { path: '/addons', label: 'Addons', icon: PlusCircle },
+  { path: '/amenities', label: 'Amenities', icon: Sparkles },
   { path: '/company', label: 'Company Profile', icon: Building2 },
 ];
 
