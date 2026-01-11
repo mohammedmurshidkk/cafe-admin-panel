@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface FormModalProps {
   open?: boolean;
@@ -21,19 +22,21 @@ interface FormModalProps {
   onSubmit?: () => void | Promise<void>;
   isLoading?: boolean;
   submitLabel?: string;
+  className?: string;
 }
 
-export const FormModal = ({ 
-  open, 
+export const FormModal = ({
+  open,
   isOpen,
-  onOpenChange, 
+  onOpenChange,
   onClose,
-  title, 
-  description, 
+  title,
+  description,
   children,
   onSubmit,
   isLoading,
   submitLabel = 'Save',
+  className,
 }: FormModalProps) => {
   const isDialogOpen = open ?? isOpen ?? false;
   const handleOpenChange = (value: boolean) => {
@@ -47,7 +50,7 @@ export const FormModal = ({
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className={cn("max-w-lg max-h-[90vh] overflow-y-auto", className)}>
         <DialogHeader>
           <DialogTitle className="font-display">{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

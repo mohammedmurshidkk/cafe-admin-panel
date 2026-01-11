@@ -1,6 +1,33 @@
 import { apiSlice } from './apiSlice';
 import { MenuItem, MenuResponse, MenuItemFormData } from '@/types';
 
+// Menu PDF Config Types
+export interface MenuPdfConfig {
+  id: string;
+  business_id: string;
+  name: string;
+  name_local: string;
+  slug: string;
+  category_ids: string[];
+  pdf_url: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateMenuPdfConfigRequest {
+  name: string;
+  name_local: string;
+  categoryIds: string[];
+}
+
+export interface UpdateMenuPdfConfigRequest {
+  name?: string;
+  name_local?: string;
+  categoryIds?: string[];
+  is_active?: boolean;
+}
+
 export const menuApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getMenuItems: builder.query<MenuResponse, { category?: string }>({
@@ -51,6 +78,42 @@ export const menuApi = apiSlice.injectEndpoints({
     getMenuPdf: builder.query<{ url: string }, void>({
       query: () => 'admin/menu/pdf',
     }),
+
+    // === Menu PDF Config Endpoints ===
+    getMenuPdfConfigs: builder.query<MenuPdfConfig[], void>({
+      query: () => 'admin/menu/pdf-configs',
+      providesTags: ['MenuPdfConfigs'],
+    }),
+    createMenuPdfConfig: builder.mutation<MenuPdfConfig, CreateMenuPdfConfigRequest>({
+      query: (data) => ({
+        url: 'admin/menu/pdf-configs',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['MenuPdfConfigs'],
+    }),
+    updateMenuPdfConfig: builder.mutation<MenuPdfConfig, { id: string; data: UpdateMenuPdfConfigRequest }>({
+      query: ({ id, data }) => ({
+        url: `admin/menu/pdf-configs/${id}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['MenuPdfConfigs'],
+    }),
+    deleteMenuPdfConfig: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({
+        url: `admin/menu/pdf-configs/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['MenuPdfConfigs'],
+    }),
+    syncMenuPdfConfig: builder.mutation<{ pdf_url: string }, string>({
+      query: (id) => ({
+        url: `admin/menu/pdf-configs/${id}/sync`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['MenuPdfConfigs'],
+    }),
   }),
 });
 
@@ -62,4 +125,10 @@ export const {
   useUploadMenuItemImageMutation,
   useSyncMenuPdfMutation,
   useLazyGetMenuPdfQuery,
+  // PDF Config hooks
+  useGetMenuPdfConfigsQuery,
+  useCreateMenuPdfConfigMutation,
+  useUpdateMenuPdfConfigMutation,
+  useDeleteMenuPdfConfigMutation,
+  useSyncMenuPdfConfigMutation,
 } = menuApi;

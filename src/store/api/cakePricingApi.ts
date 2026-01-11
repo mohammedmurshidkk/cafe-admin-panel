@@ -8,10 +8,16 @@ export interface WeightPricing {
   is_active: boolean;
 }
 
+export interface FlavorSize {
+  name: string;
+  price: number;
+  is_base: boolean;
+}
+
 export interface FlavorPricing {
   id: string;
   flavor_name: string;
-  additional_price: number;
+  sizes: FlavorSize[];
   is_active: boolean;
 }
 
@@ -125,13 +131,13 @@ interface UpdateWeightRequest {
 
 interface CreateFlavorRequest {
   flavor_name: string;
-  additional_price: number;
+  sizes: FlavorSize[];
 }
 
 interface UpdateFlavorRequest {
   id: string;
   flavor_name?: string;
-  additional_price?: number;
+  sizes?: FlavorSize[];
   is_active?: boolean;
 }
 

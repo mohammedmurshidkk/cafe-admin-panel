@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload, Search, RefreshCw, FileText } from 'lucide-react';
+import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload, Search, RefreshCw, FileText, ExternalLink, Settings } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +27,13 @@ import {
   useUploadMenuItemImageMutation,
   useSyncMenuPdfMutation,
   useLazyGetMenuPdfQuery,
+  // PDF Config hooks
+  useGetMenuPdfConfigsQuery,
+  useCreateMenuPdfConfigMutation,
+  useUpdateMenuPdfConfigMutation,
+  useDeleteMenuPdfConfigMutation,
+  useSyncMenuPdfConfigMutation,
+  MenuPdfConfig,
 } from '@/store/api/menuApi';
 import { useGetCategoriesQuery } from '@/store/api/categoriesApi';
 import { MenuItem, MenuItemFormData } from '@/types';
@@ -75,10 +82,10 @@ const Menu = () => {
 
   const { data: menuData, isLoading } = useGetMenuItemsQuery({ category: categoryFilter === 'all' ? '' : categoryFilter });
   const { data: categoriesData } = useGetCategoriesQuery();
-  
+
   // Filter menu items by search query
   const filteredItems = menuData?.items?.filter(item =>
-    !searchQuery || 
+    !searchQuery ||
     item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.description?.toLowerCase().includes(searchQuery.toLowerCase())
   ) ?? [];
@@ -88,6 +95,87 @@ const Menu = () => {
   const [uploadImage, { isLoading: isUploading }] = useUploadMenuItemImageMutation();
   const [syncMenuPdf, { isLoading: isSyncingPdf }] = useSyncMenuPdfMutation();
   const [getMenuPdf] = useLazyGetMenuPdfQuery();
+
+  // === PDF Config State ===
+  const { data: pdfConfigs, isLoading: isLoadingConfigs } = useGetMenuPdfConfigsQuery();
+  const [createPdfConfig, { isLoading: isCreatingConfig }] = useCreateMenuPdfConfigMutation();
+  const [updatePdfConfig, { isLoading: isUpdatingConfig }] = useUpdateMenuPdfConfigMutation();
+  const [deletePdfConfig, { isLoading: isDeletingConfig }] = useDeleteMenuPdfConfigMutation();
+  const [syncPdfConfig] = useSyncMenuPdfConfigMutation();
+
+  const [isPdfConfigsModalOpen, setIsPdfConfigsModalOpen] = useState(false); // Main listing modal
+  const [isPdfConfigModalOpen, setIsPdfConfigModalOpen] = useState(false); // Create/Edit form modal
+  const [editingPdfConfig, setEditingPdfConfig] = useState<MenuPdfConfig | null>(null);
+  const [deletePdfConfigItem, setDeletePdfConfigItem] = useState<MenuPdfConfig | null>(null);
+  const [pdfConfigFormData, setPdfConfigFormData] = useState<{ name: string; name_local: string; categoryIds: string[] }>({ name: '', name_local: '', categoryIds: [] });
+  const [syncingConfigId, setSyncingConfigId] = useState<string | null>(null);
+
+  // PDF Config Handlers
+  const openPdfConfigModal = (config?: MenuPdfConfig) => {
+    if (config) {
+      setEditingPdfConfig(config);
+      setPdfConfigFormData({
+        name: config.name,
+        name_local: config.name_local || '',
+        categoryIds: config.category_ids
+      });
+    } else {
+      setEditingPdfConfig(null);
+      setPdfConfigFormData({ name: '', name_local: '', categoryIds: [] });
+    }
+    setIsPdfConfigModalOpen(true);
+  };
+
+  const handlePdfConfigSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (editingPdfConfig) {
+        await updatePdfConfig({ id: editingPdfConfig.id, data: pdfConfigFormData }).unwrap();
+        toast.success('PDF Config updated');
+      } else {
+        await createPdfConfig(pdfConfigFormData).unwrap();
+        toast.success('PDF Config created');
+      }
+      setIsPdfConfigModalOpen(false);
+    } catch (error) {
+      toast.error('Failed to save PDF Config');
+    }
+  };
+
+  const handleDeletePdfConfig = async () => {
+    if (!deletePdfConfigItem) return;
+    try {
+      await deletePdfConfig(deletePdfConfigItem.id).unwrap();
+      toast.success('PDF Config deleted');
+      setDeletePdfConfigItem(null);
+    } catch (error) {
+      toast.error('Failed to delete PDF Config');
+    }
+  };
+
+  const handleSyncPdfConfig = async (configId: string) => {
+    setSyncingConfigId(configId);
+    try {
+      const result = await syncPdfConfig(configId).unwrap();
+      toast.success('PDF synced successfully');
+      if (result.pdf_url) {
+        window.open(result.pdf_url, '_blank');
+      }
+    } catch (error) {
+      toast.error('Failed to sync PDF');
+    } finally {
+      setSyncingConfigId(null);
+    }
+  };
+
+  const togglePdfConfigCategory = (categoryId: string) => {
+    setPdfConfigFormData(prev => ({
+      ...prev,
+      categoryIds: prev.categoryIds.includes(categoryId)
+        ? prev.categoryIds.filter(id => id !== categoryId)
+        : [...prev.categoryIds, categoryId]
+    }));
+  };
 
   const openForm = (item?: MenuItem) => {
     if (item) {
@@ -246,13 +334,9 @@ const Menu = () => {
         description="Manage your menu items and prices"
         action={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleViewPdf}>
+            <Button variant="outline" onClick={() => setIsPdfConfigsModalOpen(true)}>
               <FileText className="h-4 w-4 mr-2" />
-              View PDF
-            </Button>
-            <Button variant="outline" onClick={handleSyncPdf} disabled={isSyncingPdf}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${isSyncingPdf ? 'animate-spin' : ''}`} />
-              {isSyncingPdf ? 'Syncing...' : 'Sync Menu PDF'}
+              PDF Menus
             </Button>
             <Button variant="gradient" onClick={() => openForm()}>
               <Plus className="h-4 w-4 mr-2" />
@@ -300,16 +384,16 @@ const Menu = () => {
               {/* Image */}
               <div className="h-40 bg-muted flex items-center justify-center">
                 {item.image_url ? (
-                  <img 
-                    src={item.image_url} 
-                    alt={item.name} 
+                  <img
+                    src={item.image_url}
+                    alt={item.name}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <ImageIcon className="h-12 w-12 text-muted-foreground" />
                 )}
               </div>
-              
+
               {/* Content */}
               <div className="p-4">
                 <div className="flex items-start justify-between mb-2">
@@ -330,10 +414,10 @@ const Menu = () => {
                     <p className="font-bold text-primary">{formatCurrency(item.price || 0)}</p>
                   )}
                 </div>
-                
+
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-2">
-                    <Switch 
+                    <Switch
                       checked={item.is_available}
                       onCheckedChange={() => handleToggleAvailable(item)}
                     />
@@ -345,9 +429,9 @@ const Menu = () => {
                     <Button variant="ghost" size="icon" onClick={() => openForm(item)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setDeleteItem(item)}
                       className="text-destructive hover:text-destructive"
                     >
@@ -580,6 +664,181 @@ const Menu = () => {
         variant="destructive"
         onConfirm={handleDelete}
         isLoading={isDeleting}
+      />
+
+      {/* ====== PDF CONFIGS MODAL ====== */}
+      <FormModal
+        open={isPdfConfigsModalOpen}
+        onOpenChange={setIsPdfConfigsModalOpen}
+        title="Menu PDF Configurations"
+        className="max-w-4xl"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">Create and manage custom PDF menus for different categories</p>
+            <Button size="sm" onClick={() => openPdfConfigModal()}>
+              <Plus className="h-4 w-4 mr-2" />
+              New Config
+            </Button>
+          </div>
+
+          {isLoadingConfigs ? (
+            <div className="space-y-2">
+              {[1, 2].map((i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+              ))}
+            </div>
+          ) : pdfConfigs && pdfConfigs.length > 0 ? (
+            <div className="border rounded-lg overflow-hidden max-h-80 overflow-y-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50 sticky top-0">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-xs font-medium">Name</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium">Categories</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium">PDF</th>
+                    <th className="px-3 py-2 text-right text-xs font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {pdfConfigs.map((config) => (
+                    <tr key={config.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-3 py-2">
+                        <div className="font-medium text-sm">{config.name}</div>
+                        <div className="text-xs text-muted-foreground">{config.name_local} | {config.slug}</div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <Badge variant="outline" className="text-xs">{config.category_ids.length}</Badge>
+                      </td>
+                      <td className="px-3 py-2">
+                        {config.pdf_url ? (
+                          <a
+                            href={config.pdf_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            View
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => handleSyncPdfConfig(config.id)}
+                            disabled={syncingConfigId === config.id}
+                          >
+                            <RefreshCw className={`h-3 w-3 mr-1 ${syncingConfigId === config.id ? 'animate-spin' : ''}`} />
+                            {syncingConfigId === config.id ? '...' : 'Sync'}
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openPdfConfigModal(config)}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={() => setDeletePdfConfigItem(config)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="h-10 w-10 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No PDF configurations yet</p>
+              <Button size="sm" variant="outline" className="mt-2" onClick={() => openPdfConfigModal()}>
+                Create First Config
+              </Button>
+            </div>
+          )}
+        </div>
+      </FormModal>
+
+      {/* PDF Config Form Modal */}
+      <FormModal
+        open={isPdfConfigModalOpen}
+        onOpenChange={setIsPdfConfigModalOpen}
+        title={editingPdfConfig ? 'Edit PDF Config' : 'Create PDF Config'}
+        className='overflow-hidden'
+      >
+        <form onSubmit={handlePdfConfigSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="configName">Name *</Label>
+            <Input
+              id="configName"
+              placeholder="e.g., Cakes Menu"
+              value={pdfConfigFormData.name}
+              onChange={(e) => setPdfConfigFormData(prev => ({ ...prev, name: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="configNameLocal">Local Name *</Label>
+            <Input
+              id="configNameLocal"
+              placeholder="e.g., کیک مینی"
+              value={pdfConfigFormData.name_local}
+              onChange={(e) => setPdfConfigFormData(prev => ({ ...prev, name_local: e.target.value }))}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Select Categories *</Label>
+            <div className="border rounded-lg p-3 max-h-48 overflow-y-auto space-y-2">
+              {categoriesData?.categories.map((cat) => (
+                <label key={cat.id} className="flex items-center gap-2 cursor-pointer hover:bg-muted/50 p-1 rounded">
+                  <Checkbox
+                    checked={pdfConfigFormData.categoryIds.includes(cat.id)}
+                    onCheckedChange={() => togglePdfConfigCategory(cat.id)}
+                  />
+                  <span className="text-sm">{cat.name}</span>
+                </label>
+              ))}
+            </div>
+            {pdfConfigFormData.categoryIds.length > 0 && (
+              <p className="text-xs text-muted-foreground">{pdfConfigFormData.categoryIds.length} categories selected</p>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => setIsPdfConfigModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="gradient"
+              disabled={isCreatingConfig || isUpdatingConfig || pdfConfigFormData.categoryIds.length === 0}
+            >
+              {editingPdfConfig ? 'Update' : 'Create'}
+            </Button>
+          </div>
+        </form>
+      </FormModal>
+
+      {/* PDF Config Delete Confirmation */}
+      <ConfirmDialog
+        open={!!deletePdfConfigItem}
+        onOpenChange={() => setDeletePdfConfigItem(null)}
+        title="Delete PDF Config"
+        description={`Are you sure you want to delete "${deletePdfConfigItem?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDeletePdfConfig}
+        isLoading={isDeletingConfig}
       />
     </div>
   );

@@ -86,7 +86,7 @@ export interface OrderItem {
 export interface Order {
   delivery_fee: number;
   delivery_latitude?: string | null;
-  delivery_longitude?: string |null
+  delivery_longitude?: string | null
   id: string;
   customer_phone: string;
   items: OrderItem[];
@@ -272,11 +272,11 @@ export interface Business {
   minimum_wait_minutes?: number;
   outlets: Outlet[];
   phone?: string;
-  free_radius_meters?:number
-  minimum_delivery_charge?:number
-  minimum_charge_distance_meters?:number
-  increment_per_km?:number
-  max_delivery_radius_meters?:number
+  free_radius_meters?: number
+  minimum_delivery_charge?: number
+  minimum_charge_distance_meters?: number
+  increment_per_km?: number
+  max_delivery_radius_meters?: number
 }
 
 export interface BusinessResponse {
@@ -364,7 +364,7 @@ export interface WebhookStatus {
 }
 
 // Chat types
-export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'document';
+export type MessageType = 'text' | 'image' | 'video' | 'audio' | 'document' | 'location';
 export type MessageDirection = 'inbound' | 'outbound' | 'outgoing';
 export type MessageStatus = 'sent' | 'delivered' | 'read' | 'failed';
 export type ChatSessionStatus = 'active' | 'completed' | 'expired';
@@ -382,6 +382,14 @@ export interface ChatMessage {
   media_duration: number | null;
   created_at: string;
   status: MessageStatus;
+  // Location fields
+  latitude?: number;
+  longitude?: number;
+  address?: string;
+  // Forwarded flag
+  is_forwarded?: boolean;
+  media_id?: string;
+  caption?: string;
 }
 
 export interface LastMessage {
@@ -443,11 +451,18 @@ export interface SendMessageRequest {
   type: MessageType;
   content?: string;
   media_id?: string;
+  media_url?: string | null; // For forwarding existing media
   caption?: string;
   filename?: string;
   // Quote fields - when sending a cake quote
   quote_id?: string;
   quote_price?: number;
+  // Forwarded flag
+  is_forwarded?: boolean;
+  // Location fields
+  latitude?: number;
+  longitude?: number;
+  address?: string;
 }
 
 export interface SendMessageResponse {

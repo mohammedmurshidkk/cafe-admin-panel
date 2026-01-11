@@ -15,6 +15,7 @@ import Addons from './pages/Addons';
 import CompanyProfile from './pages/CompanyProfile';
 import Amenities from './pages/Amenities';
 import Notifications from './pages/Notifications';
+import InterventionsPage from './pages/InterventionsPage';
 import AdminChat from './pages/AdminChat';
 import SuperadminBusinesses from './pages/SuperadminBusinesses';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/company" element={<CompanyProfile />} />
             <Route path="/amenities" element={<Amenities />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/interventions" element={<InterventionsPage />} />
             <Route path="/chat/:sessionId?" element={<AdminChat />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -1,24 +1,26 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useGetSessionMessagesQuery, useLazyGetSessionMessagesQuery, useMarkSessionAsReadMutation } from '@/store/api/chatApi';
 import { ChatMessage } from '@/types';
-import { useGetPendingQuoteQuery, useCancelCakeQuoteMutation, useGetCakePricingConfigQuery, useConfirmCakeQuoteTimeMutation, useRejectCakeQuoteTimeMutation } from '@/store/api/cakePricingApi';
+import { useGetCakePricingConfigQuery } from '@/store/api/cakePricingApi';
+import {
+  useGetInterventionsBySessionQuery,
+  useClaimInterventionMutation,
+  useResolveInterventionMutation,
+  useCancelInterventionMutation
+} from '@/store/api/interventionApi';
 import { MessageBubble } from './MessageBubble';
 import { ChatInput, ChatInputHandle } from './ChatInput';
+import { ForwardMessageModal } from './ForwardMessageModal';
+import { useInterventionSocket } from '@/hooks/useInterventionSocket';
 import { AiPauseToggle } from './AiPauseToggle';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { ArrowLeft, Phone, X, Lightbulb, ChevronDown, ChevronUp, Minus, Plus, Clock, Truck, Store, Check } from 'lucide-react';
+import { ArrowLeft, Phone, X, Forward } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatPhone } from '@/utils/formatters';
 import { toast } from 'sonner';
+import { TimeConfirmationCard } from './interventions/TimeConfirmationCard';
+import { CustomCakeRequestCard } from './interventions/CustomCakeRequestCard';
 
 interface ChatViewProps {
   sessionId: string;
@@ -27,6 +29,14 @@ interface ChatViewProps {
   className?: string;
 }
 
+// Helper to format weight
+const formatWeight = (g: number | string | undefined) => {
+  if (!g) return 'N/A';
+  const weight = typeof g === 'string' ? parseInt(g) : g;
+  if (isNaN(weight)) return 'N/A';
+  return weight >= 1000 ? `${weight / 1000}kg` : `${weight}g`;
+};
+
 export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -34,19 +44,20 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
   const chatInputRef = useRef<ChatInputHandle>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
+  // Message selection state for forwarding
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
+  const [forwardModalOpen, setForwardModalOpen] = useState(false);
+  const [messagesToForward, setMessagesToForward] = useState<ChatMessage[]>([]);
+
+  // Initialize intervention socket
+  useInterventionSocket();
+
+  // Cake quote states
   // Cake quote states
   const [quoteExpanded, setQuoteExpanded] = useState(true);
   const [quoteDismissed, setQuoteDismissed] = useState(false);
 
-  // Editable quote states
-  const [editableWeight, setEditableWeight] = useState<number>(1000);
-  const [editableBasePrice, setEditableBasePrice] = useState<number>(0);
-  const [editableElements, setEditableElements] = useState<Array<{
-    element_key: string;
-    element_label: string;
-    quantity: number;
-    price: number;
-  }>>([]);
 
   // Infinite scroll states
   const [allMessages, setAllMessages] = useState<ChatMessage[]>([]);
@@ -61,48 +72,20 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
   const [markAsRead] = useMarkSessionAsReadMutation();
 
   // Cake quote API hooks
-  const { data: pendingQuoteData } = useGetPendingQuoteQuery(sessionId, {
-    pollingInterval: 30000, // Poll every 30 seconds for new quotes
-  });
-  const [cancelQuote, { isLoading: isCancelling }] = useCancelCakeQuoteMutation();
-  const [confirmTime, { isLoading: isConfirmingTime }] = useConfirmCakeQuoteTimeMutation();
-  const [rejectTime, { isLoading: isRejectingTime }] = useRejectCakeQuoteTimeMutation();
+  // Intervention API hooks
+  const { data: interventionsData } = useGetInterventionsBySessionQuery(sessionId);
+  const [claimIntervention, { isLoading: isClaiming }] = useClaimInterventionMutation();
+  const [resolveIntervention, { isLoading: isResolving }] = useResolveInterventionMutation();
+  const [cancelIntervention, { isLoading: isCancelling }] = useCancelInterventionMutation();
   const { data: cakePricingData } = useGetCakePricingConfigQuery();
-  
-  const pendingQuote = pendingQuoteData?.data;
-  const weightPricingConfig = cakePricingData?.data?.weights || [];
 
-  // Weight options: 500g to 10kg in 500g intervals
-  const weightOptions = useMemo(() => {
-    const options = [];
-    for (let g = 500; g <= 10000; g += 500) {
-      options.push({ value: g, label: g >= 1000 ? `${g / 1000}kg` : `${g}g` });
-    }
-    return options;
-  }, []);
 
-  // Calculate total from editable values
-  const calculatedTotal = useMemo(() => {
-    const elementsTotal = editableElements.reduce((sum, el) => sum + (el.price * el.quantity), 0);
-    return editableBasePrice + elementsTotal;
-  }, [editableBasePrice, editableElements]);
+  // Find active intervention (pending or in_review)
+  const pendingIntervention = interventionsData?.find(i =>
+    ['pending', 'in_review'].includes(i.status)
+  );
 
-  // Initialize editable state when pendingQuote changes
-  useEffect(() => {
-    if (pendingQuote?.ai_analysis) {
-      setEditableBasePrice(pendingQuote.ai_analysis?.price_breakdown?.base_price);
-      setEditableElements(
-        pendingQuote.ai_analysis.detected_elements.map(el => ({
-          element_key: el.element_key,
-          element_label: el.element_label,
-          quantity: el.quantity,
-          price: el.unit_price,
-        }))
-      );
-      // Try to parse weight from suggested price context or default to 1kg
-      setEditableWeight(1000);
-    }
-  }, [pendingQuote?.id]);
+  console.log('interventionsData', interventionsData, pendingIntervention, quoteDismissed);
 
   const session = data?.data?.session;
   const customer = data?.data?.customer;
@@ -181,7 +164,60 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
     setAllMessages([]);
     setInitialScrollDone(false);
     setIsUserNearBottom(true);
+    // Reset selection state
+    setIsSelectionMode(false);
+    setSelectedMessageIds(new Set());
   }, [sessionId]);
+
+  // Handle message selection
+  const handleSelectMessage = useCallback((messageId: string) => {
+    setSelectedMessageIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageId)) {
+        newSet.delete(messageId);
+      } else {
+        newSet.add(messageId);
+      }
+      // Enter selection mode when first message is selected
+      if (newSet.size > 0 && !isSelectionMode) {
+        setIsSelectionMode(true);
+      }
+      // Exit selection mode when no messages are selected
+      if (newSet.size === 0) {
+        setIsSelectionMode(false);
+      }
+      return newSet;
+    });
+  }, [isSelectionMode]);
+
+  // Handle forward single message (from hover button)
+  const handleForwardSingle = useCallback((message: ChatMessage) => {
+    setMessagesToForward([message]);
+    setForwardModalOpen(true);
+  }, []);
+
+  // Handle forward selected messages
+  const handleForwardSelected = useCallback(() => {
+    const selectedMessages = allMessages.filter((m) => selectedMessageIds.has(m.id));
+    if (selectedMessages.length > 0) {
+      setMessagesToForward(selectedMessages);
+      setForwardModalOpen(true);
+    }
+  }, [allMessages, selectedMessageIds]);
+
+  // Cancel selection mode
+  const handleCancelSelection = useCallback(() => {
+    setIsSelectionMode(false);
+    setSelectedMessageIds(new Set());
+  }, []);
+
+  // Close forward modal and reset selection
+  const handleCloseForwardModal = useCallback(() => {
+    setForwardModalOpen(false);
+    setMessagesToForward([]);
+    setIsSelectionMode(false);
+    setSelectedMessageIds(new Set());
+  }, []);
 
   const handleLoadMore = useCallback(async () => {
     if (isLoadingMore || !hasMore) return;
@@ -247,83 +283,41 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
     return `${grams}g`;
   };
 
-  const handleInsertQuoteMessage = () => {
-    if (pendingQuote && chatInputRef.current) {
-      // Generate simplified message with only weight and total
-      const weightLabel = formatWeight(editableWeight);
-      const simplifiedMessage = `Your custom cake quote: ${weightLabel} - ₹${calculatedTotal.toLocaleString()}`;
-      // Pass quote data along with the message
-      chatInputRef.current.setMessage(simplifiedMessage, {
-        quote_id: pendingQuote.id,
-        quote_price: calculatedTotal,
-      });
-      setQuoteExpanded(false);
+  const handleClaim = async () => {
+    if (!pendingIntervention) return;
+    try {
+      await claimIntervention(pendingIntervention.id).unwrap();
+      toast.success('Intervention claimed');
+    } catch (error) {
+      toast.error('Failed to claim');
     }
   };
 
-  const handleWeightChange = (newWeight: number) => {
-    setEditableWeight(newWeight);
-    // Update base price based on weight pricing config
-    const weightConfig = weightPricingConfig.find(w => w.weight_grams === newWeight);
-    if (weightConfig) {
-      setEditableBasePrice(weightConfig.base_price);
-    }
-  };
-
-  const updateElementQuantity = (index: number, delta: number) => {
-    setEditableElements(prev => prev.map((el, i) => {
-      if (i === index) {
-        const newQty = Math.max(0, el.quantity + delta);
-        return { ...el, quantity: newQty };
-      }
-      return el;
-    }));
-  };
-
-  const updateElementPrice = (index: number, price: number) => {
-    setEditableElements(prev => prev.map((el, i) => {
-      if (i === index) {
-        return { ...el, price: Math.max(0, price) };
-      }
-      return el;
-    }));
-  };
-
-  const handleDismissQuote = async () => {
-    if (!pendingQuote) return;
+  const handleResolve = async (approved: boolean, price?: number, message?: string) => {
+    if (!pendingIntervention) return;
 
     try {
-      await cancelQuote({
-        id: pendingQuote.id,
-        reason: 'Dismissed by admin'
+      await resolveIntervention({
+        id: pendingIntervention.id,
+        approved,
+        price,
+        message,
       }).unwrap();
+      toast.success(approved ? 'Quote sent' : 'Request rejected');
       setQuoteDismissed(true);
     } catch (error) {
-      toast.error('Failed to dismiss quote');
+      toast.error('Failed to resolve');
     }
   };
 
-  const handleConfirmTime = async () => {
-    if (!pendingQuote) return;
-
+  const handleCancel = async () => {
+    if (!pendingIntervention) return;
     try {
-      await confirmTime(pendingQuote.id).unwrap();
-      toast.success('Delivery time confirmed');
+      await cancelIntervention(pendingIntervention.id).unwrap();
+      toast.success('Intervention cancelled');
       setQuoteDismissed(true);
     } catch (error) {
-      toast.error('Failed to confirm time');
-    }
-  };
-
-  const handleRejectTime = async () => {
-    if (!pendingQuote) return;
-
-    try {
-      await rejectTime({ id: pendingQuote.id, reason: 'Time slot not available' }).unwrap();
-      toast.success('Time rejected - customer will be notified');
-      setQuoteDismissed(true);
-    } catch (error) {
-      toast.error('Failed to reject time');
+      toast.error('Failed to cancel');
     }
   };
 
@@ -392,6 +386,35 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
         )}
       </div>
 
+      {/* Selection Toolbar */}
+      {isSelectionMode && (
+        <div className="flex-shrink-0 px-4 py-2 bg-primary/5 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCancelSelection}
+              className="gap-1"
+            >
+              <X className="h-4 w-4" />
+              Cancel
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {selectedMessageIds.size} selected
+            </span>
+          </div>
+          <Button
+            onClick={handleForwardSelected}
+            size="sm"
+            disabled={selectedMessageIds.size === 0}
+            className="gap-2"
+          >
+            <Forward className="h-4 w-4" />
+            Forward
+          </Button>
+        </div>
+      )}
+
       {/* Messages - Scrollable */}
       <div
         ref={messagesContainerRef}
@@ -415,6 +438,10 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
                 key={message.id}
                 message={message}
                 onImageClick={setLightboxImage}
+                isSelectionMode={isSelectionMode}
+                isSelected={selectedMessageIds.has(message.id)}
+                onSelect={handleSelectMessage}
+                onForwardSingle={handleForwardSingle}
               />
             ))}
             <div ref={messagesEndRef} />
@@ -422,265 +449,35 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
         )}
       </div>
 
-      {/* Quote Suggestion Bubble - Price Confirmation */}
-      {pendingQuote && !quoteDismissed && pendingQuote.type === 'price_confirmation' && (
+      {/* Intervention Card */}
+      {pendingIntervention && !quoteDismissed && (
         <div className="flex-shrink-0 border-t border-border">
           <div className="bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10 border-b border-purple-200/50 dark:border-purple-800/50">
-            {/* Collapsed State */}
-            {!quoteExpanded ? (
-              <div
-                className="flex items-center justify-between p-3 cursor-pointer hover:bg-purple-500/5 transition-colors"
-                onClick={() => setQuoteExpanded(true)}
-              >
-                <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
-                  <Lightbulb className="h-4 w-4" />
-                  <span className="text-sm font-medium">AI Quote Ready - {formatWeight(editableWeight)} - ₹{calculatedTotal.toLocaleString()}</span>
-                </div>
-                <ChevronUp className="h-4 w-4 text-purple-600" />
-              </div>
+            {/* TIME CONFIRMATION CARD (for time and urgent delivery) */}
+            {(pendingIntervention.type === 'custom_cake_time_confirmation' || pendingIntervention.type === 'urgent_delivery') ? (
+              <TimeConfirmationCard
+                intervention={pendingIntervention}
+                onResolve={(approved, message) => handleResolve(approved, undefined, message)}
+                onCancel={handleCancel}
+                isResolving={isResolving}
+                isCancelling={isCancelling}
+              />
             ) : (
-              /* Expanded State - Editable */
-              <div className="p-4">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
-                    <Lightbulb className="h-5 w-5" />
-                    <span className="font-semibold">AI Price Suggestion</span>
-                    {pendingQuote.ai_analysis?.confidence_score != null && (
-                      <span className="text-xs text-muted-foreground">
-                        ({Math.round(pendingQuote.ai_analysis.confidence_score * 100)}% confidence)
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setQuoteExpanded(false)}
-                      className="h-7 w-7 p-0"
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleDismissQuote}
-                      disabled={isCancelling}
-                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="flex gap-4">
-                  {/* Image Thumbnail */}
-                  {pendingQuote.image_url && (
-                    <div
-                      className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer border border-border"
-                      onClick={() => setLightboxImage(pendingQuote.image_url)}
-                    >
-                      <img
-                        src={pendingQuote.image_url}
-                        alt="Cake design"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-
-                  {/* Editable Details */}
-                  <div className="flex-1 min-w-0 space-y-3">
-                    {/* Weight & Base Price Row */}
-                    <div className="flex flex-wrap gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Weight:</span>
-                        <Select
-                          value={String(editableWeight)}
-                          onValueChange={(val) => handleWeightChange(parseInt(val))}
-                        >
-                          <SelectTrigger className="w-24 h-8 text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {weightOptions.map((opt) => (
-                              <SelectItem key={opt.value} value={String(opt.value)}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Base:</span>
-                        <div className="relative">
-                          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">₹</span>
-                          <Input
-                            type="number"
-                            value={editableBasePrice}
-                            onChange={(e) => setEditableBasePrice(Math.max(0, parseFloat(e.target.value) || 0))}
-                            className="w-24 h-8 text-sm pl-6"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Detected Elements - Editable */}
-                    {editableElements.length > 0 && (
-                      <div className="space-y-2">
-                        <span className="text-sm font-medium text-foreground">Design Elements:</span>
-                        <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                          {editableElements.map((el, idx) => (
-                            <div key={el.element_key} className="flex items-center gap-2 text-sm">
-                              <span className="flex-1 truncate text-muted-foreground">{el.element_label}</span>
-                              {/* Quantity Controls */}
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  onClick={() => updateElementQuantity(idx, -1)}
-                                >
-                                  <Minus className="h-3 w-3" />
-                                </Button>
-                                <span className="w-6 text-center">{el.quantity}</span>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-6 w-6"
-                                  onClick={() => updateElementQuantity(idx, 1)}
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </Button>
-                              </div>
-                              {/* Price Input */}
-                              <div className="relative">
-                                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₹</span>
-                                <Input
-                                  type="number"
-                                  value={el.price}
-                                  onChange={(e) => updateElementPrice(idx, parseFloat(e.target.value) || 0)}
-                                  className="w-20 h-6 text-xs pl-5"
-                                />
-                              </div>
-                              {/* Subtotal */}
-                              <span className="text-xs text-muted-foreground w-16 text-right">
-                                = ₹{(el.price * el.quantity).toLocaleString()}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Total & Actions */}
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-purple-200/50 dark:border-purple-800/50">
-                  <div className="text-lg font-bold text-purple-700 dark:text-purple-300">
-                    Total: ₹{calculatedTotal.toLocaleString()}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDismissQuote}
-                      disabled={isCancelling}
-                    >
-                      {isCancelling ? 'Cancelling...' : 'Cancel'}
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={handleInsertQuoteMessage}
-                      className="bg-purple-600 hover:bg-purple-700"
-                    >
-                      Insert Quote
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Preview of what will be sent */}
-                <div className="mt-2 p-2 bg-background/60 rounded text-xs text-muted-foreground">
-                  <span className="font-medium">Will send:</span> Your custom cake quote: {formatWeight(editableWeight)} - ₹{calculatedTotal.toLocaleString()}
-                </div>
-              </div>
+              /* CUSTOM CAKE INTERVENTION */
+              <CustomCakeRequestCard
+                intervention={pendingIntervention}
+                isExpanded={quoteExpanded}
+                onExpandToggle={setQuoteExpanded}
+                onClaim={handleClaim}
+                onResolve={(approved, price, message) => handleResolve(approved, price, message)}
+                onCancel={handleCancel}
+                onImageClick={setLightboxImage}
+                isClaiming={isClaiming}
+                isResolving={isResolving}
+                isCancelling={isCancelling}
+                formatWeight={formatWeight}
+              />
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Time Confirmation Bubble */}
-      {pendingQuote && !quoteDismissed && pendingQuote.type === 'time_confirmation' && (
-        <div className="flex-shrink-0 border-t border-border">
-          <div className="bg-gradient-to-r from-blue-500/10 via-cyan-500/10 to-teal-500/10 border-b border-blue-200/50 dark:border-blue-800/50">
-            <div className="p-4">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                  <Clock className="h-5 w-5" />
-                  <span className="font-semibold">Time Confirmation Required</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDismissQuote}
-                  disabled={isCancelling}
-                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Content */}
-              <div className="space-y-3">
-                {/* Requested Time */}
-                <div className="flex items-center gap-3 p-3 bg-background/60 rounded-lg">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">Requested Time</p>
-                    <p className="font-medium text-foreground">{pendingQuote.requested_delivery_time}</p>
-                  </div>
-                </div>
-
-                {/* Fulfillment Type */}
-                <div className="flex items-center gap-3 p-3 bg-background/60 rounded-lg">
-                  {pendingQuote.requested_fulfillment_type === 'delivery' ? (
-                    <Truck className="h-5 w-5 text-blue-600" />
-                  ) : (
-                    <Store className="h-5 w-5 text-blue-600" />
-                  )}
-                  <div>
-                    <p className="text-xs text-muted-foreground">Fulfillment Type</p>
-                    <p className="font-medium text-foreground capitalize">{pendingQuote.requested_fulfillment_type}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-blue-200/50 dark:border-blue-800/50">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRejectTime}
-                  disabled={isRejectingTime || isConfirmingTime}
-                  className="text-destructive border-destructive/50 hover:bg-destructive/10"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  {isRejectingTime ? 'Rejecting...' : 'Reject'}
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleConfirmTime}
-                  disabled={isConfirmingTime || isRejectingTime}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  {isConfirmingTime ? 'Confirming...' : 'Confirm Time'}
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -712,6 +509,14 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
           />
         </div>
       )}
+
+      {/* Forward Message Modal */}
+      <ForwardMessageModal
+        isOpen={forwardModalOpen}
+        onClose={handleCloseForwardModal}
+        messages={messagesToForward}
+        currentSessionId={sessionId}
+      />
     </div>
   );
 };

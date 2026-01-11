@@ -6,4 +6,5 @@ export { MediaMessage } from './MediaMessage';
 export { ChatInput } from './ChatInput';
 export { VoiceRecorder } from './VoiceRecorder';
 export { AiPauseToggle } from './AiPauseToggle';
+export { ForwardMessageModal } from './ForwardMessageModal';
 export { useChatWebSocket } from '@/hooks/useChatWebSocket';

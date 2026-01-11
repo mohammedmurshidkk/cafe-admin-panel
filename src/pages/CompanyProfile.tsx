@@ -60,6 +60,7 @@ import {
   useSeedDesignElementsMutation,
   WeightPricing,
   FlavorPricing,
+  FlavorSize,
   DesignElement,
 } from '@/store/api/cakePricingApi';
 import { Outlet } from '@/types';
@@ -144,7 +145,10 @@ const CompanyProfile = () => {
 
   // Cake pricing form data
   const [weightFormData, setWeightFormData] = useState({ weight_grams: 500, base_price: 0 });
-  const [flavorFormData, setFlavorFormData] = useState({ flavor_name: '', additional_price: 0 });
+  const [flavorFormData, setFlavorFormData] = useState<{ flavor_name: string; sizes: FlavorSize[] }>({
+    flavor_name: '',
+    sizes: [{ name: '500g', price: 0, is_base: false }]
+  });
   const [designFormData, setDesignFormData] = useState({
     element_key: '',
     element_label: '',
@@ -204,10 +208,10 @@ const CompanyProfile = () => {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     const formData = new FormData();
     formData.append('logo', file);
-    
+
     try {
       await uploadLogo(formData).unwrap();
       toast.success('Logo uploaded successfully');
@@ -289,10 +293,16 @@ const CompanyProfile = () => {
   const openFlavorModal = (flavor?: FlavorPricing) => {
     if (flavor) {
       setEditingFlavor(flavor);
-      setFlavorFormData({ flavor_name: flavor.flavor_name, additional_price: flavor.additional_price });
+      setFlavorFormData({
+        flavor_name: flavor.flavor_name,
+        sizes: flavor.sizes || []
+      });
     } else {
       setEditingFlavor(null);
-      setFlavorFormData({ flavor_name: '', additional_price: 0 });
+      setFlavorFormData({
+        flavor_name: '',
+        sizes: [{ name: '500g', price: 0, is_base: false }]
+      });
     }
     setIsFlavorModalOpen(true);
   };
@@ -441,6 +451,8 @@ const CompanyProfile = () => {
     return `${grams}g`;
   };
 
+  console.log('## flavorPricing', flavorPricing)
+
   const predefinedDesignElements = [
     { key: 'extra_tier', label: 'Extra Tier' },
     { key: 'fondant_covering', label: 'Fondant Covering' },
@@ -479,8 +491,8 @@ const CompanyProfile = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader 
-        title="Company Profile" 
+      <PageHeader
+        title="Company Profile"
         description="Manage your business settings and AI configuration"
         action={
           <Button variant="gradient" onClick={handleSaveProfile} disabled={isSaving}>
@@ -561,8 +573,8 @@ const CompanyProfile = () => {
               className="hidden"
               onChange={handleLogoUpload}
             />
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => logoInputRef.current?.click()}
               disabled={isUploadingLogo}
             >
@@ -617,7 +629,7 @@ const CompanyProfile = () => {
             />
           </div>
         </div>
-        
+
         {supportsDelivery && (
           <div className="mt-6 p-4 border border-border rounded-lg space-y-4">
             <h4 className="font-medium text-sm flex items-center gap-2">
@@ -833,7 +845,7 @@ const CompanyProfile = () => {
             placeholder="Add custom instructions for your AI assistant. These have highest priority."
             rows={6}
           />
-          
+
           <div className="bg-muted/50 rounded-lg p-4">
             <p className="text-sm font-medium mb-2">Example instructions:</p>
             <ul className="text-sm text-muted-foreground space-y-1">
@@ -940,69 +952,18 @@ const CompanyProfile = () => {
             )}
 
             {/* Pricing Tabs */}
-            <Tabs defaultValue="weights" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="weights">Weight Pricing</TabsTrigger>
-                <TabsTrigger value="flavors">Flavor Pricing</TabsTrigger>
+            <Tabs defaultValue="flavors" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="flavors">Pricing (Flavor & Weight)</TabsTrigger>
                 <TabsTrigger value="design">Design Elements</TabsTrigger>
               </TabsList>
 
-              {/* Weight Pricing Tab */}
-              <TabsContent value="weights" className="mt-4">
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-sm text-muted-foreground">Base prices by cake weight</p>
-                  <Button variant="outline" size="sm" onClick={() => openWeightModal()}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Weight
-                  </Button>
-                </div>
-
-                {weightPricing.length > 0 ? (
-                  <div className="space-y-2">
-                    {weightPricing.map((weight) => (
-                      <div
-                        key={weight.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                      >
-                        <div className="flex items-center gap-4">
-                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                          <div>
-                            <p className="font-medium">{formatWeight(weight.weight_grams)}</p>
-                            <p className="text-sm text-muted-foreground">₹{weight.base_price}</p>
-                          </div>
-                          <Badge variant={weight.is_active ? 'active' : 'secondary'}>
-                            {weight.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => openWeightModal(weight)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteWeightItem(weight)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Cake className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>No weight pricing configured</p>
-                    <p className="text-sm">Add weight options to get started</p>
-                  </div>
-                )}
-              </TabsContent>
+              {/* Weights Tab Removed */}
 
               {/* Flavor Pricing Tab */}
               <TabsContent value="flavors" className="mt-4">
                 <div className="flex justify-between items-center mb-4">
-                  <p className="text-sm text-muted-foreground">Additional charges by flavor</p>
+                  <p className="text-sm text-muted-foreground">Manage pricing by flavor and size</p>
                   <Button variant="outline" size="sm" onClick={() => openFlavorModal()}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Flavor
@@ -1016,17 +977,21 @@ const CompanyProfile = () => {
                         key={flavor.id}
                         className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                       >
-                        <div className="flex items-center gap-4">
-                          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
-                          <div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
                             <p className="font-medium">{flavor.flavor_name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {flavor.additional_price === 0 ? 'No extra charge' : `+₹${flavor.additional_price}`}
-                            </p>
+                            <Badge variant={flavor.is_active ? 'active' : 'secondary'}>
+                              {flavor.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
                           </div>
-                          <Badge variant={flavor.is_active ? 'active' : 'secondary'}>
-                            {flavor.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
+                          <div className="flex flex-wrap gap-2">
+                            {flavor.sizes?.map((size, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {size.name}: ₹{size.price}
+                                {size.is_base && <span className="ml-1 text-[10px] text-muted-foreground">(Base)</span>}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                         <div className="flex gap-2">
                           <Button variant="ghost" size="icon" onClick={() => openFlavorModal(flavor)}>
@@ -1338,9 +1303,10 @@ const CompanyProfile = () => {
       <FormModal
         open={isFlavorModalOpen}
         onOpenChange={setIsFlavorModalOpen}
-        title={editingFlavor ? 'Edit Flavor Pricing' : 'Add Flavor Pricing'}
+        title={editingFlavor ? 'Edit Pricing' : 'Add Pricing'}
+        className="max-w-2xl"
       >
-        <form onSubmit={handleSubmitFlavor} className="space-y-4">
+        <form onSubmit={handleSubmitFlavor} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="flavorName">Flavor Name</Label>
             <Input
@@ -1352,16 +1318,93 @@ const CompanyProfile = () => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="additionalPrice">Additional Price (₹)</Label>
-            <Input
-              id="additionalPrice"
-              type="number"
-              min="0"
-              value={flavorFormData.additional_price}
-              onChange={(e) => setFlavorFormData(prev => ({ ...prev, additional_price: parseFloat(e.target.value) || 0 }))}
-            />
-            <p className="text-xs text-muted-foreground">Set to 0 for no extra charge</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Sizes & Prices</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setFlavorFormData(prev => ({
+                  ...prev,
+                  sizes: [...prev.sizes, { name: '', price: 0, is_base: false }]
+                }))}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add Size
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {flavorFormData.sizes.map((size, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border border-border">
+                  <div className="flex-1 space-y-2">
+                    <Label className="text-xs text-muted-foreground">Size Name / Weight</Label>
+                    <Input
+                      value={size.name}
+                      onChange={(e) => {
+                        const newSizes = [...flavorFormData.sizes];
+                        newSizes[index].name = e.target.value;
+                        setFlavorFormData(prev => ({ ...prev, sizes: newSizes }));
+                      }}
+                      placeholder="e.g. 500g, 1kg"
+                      required
+                    />
+                  </div>
+                  <div className="w-32 space-y-2">
+                    <Label className="text-xs text-muted-foreground">Price (₹)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={size.price}
+                      onChange={(e) => {
+                        const newSizes = [...flavorFormData.sizes];
+                        newSizes[index].price = parseFloat(e.target.value) || 0;
+                        setFlavorFormData(prev => ({ ...prev, sizes: newSizes }));
+                      }}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2 pt-8">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`is-base-${index}`}
+                        checked={size.is_base}
+                        onChange={(e) => {
+                          const newSizes = [...flavorFormData.sizes];
+                          // Ensure we update using boolean
+                          newSizes[index].is_base = e.target.checked;
+                          setFlavorFormData(prev => ({ ...prev, sizes: newSizes }));
+                        }}
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                      <label
+                        htmlFor={`is-base-${index}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        Base
+                      </label>
+                    </div>
+                  </div>
+                  <div className="pt-8">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive h-8 w-8"
+                      onClick={() => {
+                        const newSizes = flavorFormData.sizes.filter((_, i) => i !== index);
+                        setFlavorFormData(prev => ({ ...prev, sizes: newSizes }));
+                      }}
+                      disabled={flavorFormData.sizes.length === 1}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
