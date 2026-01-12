@@ -48,7 +48,8 @@ const statusOptions: { value: OrderStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All Statuses' },
   { value: 'pending', label: 'Pending' },
   { value: 'confirmed', label: 'Confirmed' },
-  { value: 'preparing', label: 'Preparing' },
+  { value: 'processing', label: 'Processing' },
+  { value: 'out_for_delivery', label: 'Out for Delivery' },
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
@@ -63,11 +64,11 @@ const Orders = () => {
     setSelectedOrder(item);
   };
 
-  const { data, isLoading, isFetching, refetch } = useGetOrdersQuery({ 
-    status: statusFilter === 'all' ? '' : statusFilter, 
-    search, 
+  const { data, isLoading, isFetching, refetch } = useGetOrdersQuery({
+    status: statusFilter === 'all' ? '' : statusFilter,
+    search,
     page,
-    limit: 20 
+    limit: 20
   });
   const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
 
@@ -153,8 +154,8 @@ const Orders = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader 
-        title="Orders" 
+      <PageHeader
+        title="Orders"
         description="Manage and track all customer orders"
       />
 

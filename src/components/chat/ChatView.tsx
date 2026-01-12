@@ -21,6 +21,7 @@ import { formatPhone } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { TimeConfirmationCard } from './interventions/TimeConfirmationCard';
 import { CustomCakeRequestCard } from './interventions/CustomCakeRequestCard';
+import { LocationConfirmationCard } from './interventions/LocationConfirmationCard';
 
 interface ChatViewProps {
   sessionId: string;
@@ -293,7 +294,7 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
     }
   };
 
-  const handleResolve = async (approved: boolean, price?: number, message?: string) => {
+  const handleResolve = async (approved: boolean, price?: number, message?: string, customDeliveryFee?: number) => {
     if (!pendingIntervention) return;
 
     try {
@@ -302,6 +303,7 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
         approved,
         price,
         message,
+        custom_delivery_fee: customDeliveryFee
       }).unwrap();
       toast.success(approved ? 'Quote sent' : 'Request rejected');
       setQuoteDismissed(true);
@@ -457,10 +459,18 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
             {(pendingIntervention.type === 'custom_cake_time_confirmation' || pendingIntervention.type === 'urgent_delivery') ? (
               <TimeConfirmationCard
                 intervention={pendingIntervention}
+                isExpanded={quoteExpanded}
+                onExpandToggle={setQuoteExpanded}
                 onResolve={(approved, message) => handleResolve(approved, undefined, message)}
-                onCancel={handleCancel}
                 isResolving={isResolving}
-                isCancelling={isCancelling}
+              />
+            ) : pendingIntervention.type === 'out_of_radius' ? (
+              <LocationConfirmationCard
+                intervention={pendingIntervention}
+                isExpanded={quoteExpanded}
+                onExpandToggle={setQuoteExpanded}
+                onResolve={(approved, message, customDeliveryFee) => handleResolve(approved, undefined, message, customDeliveryFee)}
+                isResolving={isResolving}
               />
             ) : (
               /* CUSTOM CAKE INTERVENTION */

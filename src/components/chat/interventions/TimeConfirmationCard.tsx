@@ -1,29 +1,51 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Clock, X, Truck, Store, Check, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Clock, Truck, Store, Check, ThumbsUp, ThumbsDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatPhone } from '@/utils/formatters';
 import { Intervention } from '@/store/api/interventionApi';
 
 interface TimeConfirmationCardProps {
     intervention: Intervention;
+    isExpanded: boolean;
+    onExpandToggle: (expanded: boolean) => void;
     onResolve: (approved: boolean, message?: string) => void;
-    onCancel: () => void;
     isResolving: boolean;
-    isCancelling: boolean;
 }
 
 export const TimeConfirmationCard = ({
     intervention,
+    isExpanded,
+    onExpandToggle,
     onResolve,
-    onCancel,
     isResolving,
-    isCancelling
 }: TimeConfirmationCardProps) => {
     const [customMessage, setCustomMessage] = useState('');
 
     const approvalMessage = `നിങ്ങളുടെ ഓർഡർ ആ സമയത്തിനുള്ളിൽ ഡെലിവർ ചെയ്യാൻ കഴിയും. ദയവായി നിങ്ങളുടെ ഓർഡർ സ്ഥിരീകരിക്കാൻ "Yes" എന്ന് പറയുക, നന്ദി!`;
     const rejectionMessage = `ക്ഷമിക്കണം, നിങ്ങൾ അഭ്യർത്ഥിച്ച സമയത്ത് ഞങ്ങൾക്ക് ഡെലിവർ ചെയ്യാൻ കഴിയില്ല. ദയവായി മറ്റൊരു സമയം തിരഞ്ഞെടുക്കുക.`;
+
+    // Render collapsed view
+    if (!isExpanded) {
+        const timeStr = intervention.request_data?.requestedTime
+            ? new Date(intervention.request_data.requestedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+            : 'N/A';
+
+        return (
+            <div
+                className="flex items-center justify-between p-3 cursor-pointer hover:bg-purple-500/5 transition-colors"
+                onClick={() => onExpandToggle(true)}
+            >
+                <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                    <Clock className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                        Confirm Time: {timeStr}
+                    </span>
+                </div>
+                <ChevronUp className="h-4 w-4 text-purple-600" />
+            </div>
+        );
+    }
 
     return (
         <div className="p-4">
@@ -35,11 +57,10 @@ export const TimeConfirmationCard = ({
                 <Button
                     variant="ghost"
                     size="sm"
-                    onClick={onCancel}
-                    disabled={isCancelling}
-                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => onExpandToggle(false)}
+                    className="h-7 w-7 p-0"
                 >
-                    <X className="h-4 w-4" />
+                    <ChevronDown className="h-4 w-4" />
                 </Button>
             </div>
 

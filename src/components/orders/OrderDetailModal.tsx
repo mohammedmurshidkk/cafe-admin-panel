@@ -162,16 +162,21 @@ export const OrderDetailModal = ({
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <h4 className="font-semibold mb-4 text-sm uppercase tracking-wide text-muted-foreground">Update Status</h4>
             <div className="flex flex-wrap gap-2">
-              {(['preparing', 'completed', 'cancelled'] as OrderStatus[]).map((status) => (
+              {(['processing', 'out_for_delivery', 'completed', 'cancelled'] as OrderStatus[]).map((status) => (
                 <Button
                   key={status}
-                  variant={status === 'cancelled' ? 'destructive' : status === 'completed' ? 'success' : 'warning'}
+                  variant={
+                    status === 'cancelled' ? 'destructive' :
+                      status === 'completed' ? 'success' :
+                        status === 'out_for_delivery' ? 'outline' :
+                          'warning'
+                  }
                   size="sm"
-                  className="flex-1 min-w-[100px]"
+                  className={status === 'out_for_delivery' ? "flex-1 min-w-[130px] border-purple-500 text-purple-600 hover:bg-purple-50" : "flex-1 min-w-[100px]"}
                   disabled={isUpdating || order.status === status}
                   onClick={() => onStatusChange(order.id, status)}
                 >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                  {status === 'out_for_delivery' ? 'Out for Delivery' : status.charAt(0).toUpperCase() + status.slice(1)}
                 </Button>
               ))}
             </div>

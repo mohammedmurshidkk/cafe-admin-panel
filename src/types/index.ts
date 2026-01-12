@@ -70,7 +70,8 @@ export interface DashboardStats {
 export type OrderStatus =
   | 'pending'
   | 'confirmed'
-  | 'preparing'
+  | 'processing'
+  | 'out_for_delivery'
   | 'completed'
   | 'cancelled';
 export type FulfillmentType = 'delivery' | 'takeaway';

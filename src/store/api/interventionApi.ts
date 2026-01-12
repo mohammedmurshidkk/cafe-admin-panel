@@ -51,6 +51,7 @@ export interface ResolveInterventionRequest {
     price?: number;
     message?: string;
     notes?: string;
+    custom_delivery_fee?: number;
 }
 
 interface ApiResponse<T> {
