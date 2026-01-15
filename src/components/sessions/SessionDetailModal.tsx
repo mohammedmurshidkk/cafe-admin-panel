@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,55 +10,14 @@ import {
   Pause,
   Play,
   ShoppingCart,
-  CheckCheck,
-  RefreshCw
+  RefreshCw,
+  X
 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
 } from '@/components/ui/dialog';
-
-// Parse WhatsApp-style formatting: *bold*, _italic_, ~strikethrough~
-const formatWhatsAppText = (text: string): React.ReactNode => {
-  if (!text) return text;
-
-  // Split by formatting patterns while preserving delimiters
-  const parts: React.ReactNode[] = [];
-  let remaining = text;
-  let key = 0;
-
-  // Pattern to match *bold*, _italic_, ~strikethrough~
-  const regex = /(\*[^*]+\*|_[^_]+_|~[^~]+~)/g;
-  let lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    // Add text before the match
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
-    }
-
-    const matched = match[0];
-    const inner = matched.slice(1, -1);
-
-    if (matched.startsWith('*')) {
-      parts.push(<strong key={key++}>{inner}</strong>);
-    } else if (matched.startsWith('_')) {
-      parts.push(<em key={key++}>{inner}</em>);
-    } else if (matched.startsWith('~')) {
-      parts.push(<s key={key++}>{inner}</s>);
-    }
-
-    lastIndex = regex.lastIndex;
-  }
-
-  // Add remaining text
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
-  return parts.length > 0 ? parts : text;
-};
+import { MessageBubble } from '../chat/MessageBubble';
 
 interface SessionDetailModalProps {
   open: boolean;
@@ -80,6 +40,18 @@ export const SessionDetailModal = ({
   onRefresh,
   isRefreshing = false,
 }: SessionDetailModalProps) => {
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto scroll to bottom when messages change
+  useEffect(() => {
+    if (open && sessionDetail?.messages) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [open, sessionDetail?.messages]);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] p-0 overflow-hidden [&>button]:top-4 [&>button]:right-4 [&>button]:z-50 [&>button]:bg-background [&>button]:rounded-full [&>button]:shadow-md [&>button]:border [&>button]:border-border">
@@ -195,70 +167,47 @@ export const SessionDetailModal = ({
               </div>
             )}
 
-            {/* Messages - WhatsApp Style */}
+            {/* Messages - Chat Style */}
             <div
-              className="flex-1 overflow-y-auto p-4 space-y-3"
-              style={{
-                backgroundImage: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-                backgroundColor: 'hsl(var(--muted) / 0.3)'
-              }}
+              className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/30 scroll-smooth"
             >
               {sessionDetail.messages.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
                   No messages yet
                 </div>
               ) : (
-                sessionDetail.messages.map((msg) => {
-                  const isIncoming = msg.direction === 'incoming' || msg.direction === 'inbound';
-                  return (
-                    <div
-                      key={msg.id}
-                      className={cn(
-                        "flex",
-                        isIncoming ? "justify-start" : "justify-end"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "relative max-w-[75%] px-3 py-2 rounded-lg shadow-sm",
-                          isIncoming
-                            ? "bg-background border border-border rounded-tl-none"
-                            : "bg-secondary/10 text-foreground rounded-tr-none shadow-sm"
-                        )}
-                      >
-                        {/* Message tail */}
-                        <div
-                          className={cn(
-                            "absolute top-0 w-3 h-3",
-                            isIncoming
-                              ? "-left-3 border-t border-l border-border bg-background"
-                              : "-right-3 bg-secondary/10"
-                          )}
-                          style={{
-                            clipPath: isIncoming
-                              ? 'polygon(100% 0, 0 0, 100% 100%)'
-                              : 'polygon(0 0, 100% 0, 0 100%)'
-                          }}
-                        />
+                <>
+                  {sessionDetail.messages.map((msg: any) => {
+                    // Map session API properties to ChatMessage properties
+                    // Session API often uses 'type' instead of 'message_type', 
+                    // and 'image_url' or 'url' instead of 'media_url'.
+                    const rawType = msg.message_type || msg.type || msg.media_type;
 
-                        {/* Message content */}
-                        <p className="text-sm whitespace-pre-wrap break-words">
-                          {formatWhatsAppText(msg.content)}
-                        </p>
+                    // If content is "[Image]" it's a strong hint this is an image message 
+                    // even if the type field is missing or generic 'text'.
+                    const isImageHint = msg.content === '[Image]' || (msg as any).text === '[Image]';
 
-                        {/* Timestamp and read status */}
-                        <div className="flex items-center justify-end gap-1 mt-1">
-                          <span className="text-[10px] text-muted-foreground">
-                            {formatDateTime(msg.created_at)}
-                          </span>
-                          {!isIncoming && (
-                            <CheckCheck className="h-3 w-3 text-secondary" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
+                    const mappedMsg = {
+                      ...msg,
+                      content: msg.content || (msg as any).text || (msg as any).message || '',
+                      message_type: rawType || (isImageHint ? 'image' : 'text'),
+                      media_url: msg.media_url || (msg as any).image_url || (msg as any).imageUrl || (msg as any).url || (msg as any).mediaUrl || (msg as any).video_url || (msg as any).audio_url || (msg as any).document_url,
+                      media_caption: msg.media_caption || (msg as any).caption || (msg as any).mediaCaption || (msg as any).message,
+                      media_filename: msg.media_filename || (msg as any).filename || (msg as any).mediaFilename,
+                      media_mime_type: msg.media_mime_type || (msg as any).mime_type || (msg as any).mediaMimeType,
+                      direction: msg.direction === 'incoming' ? 'inbound' : msg.direction
+                    };
+
+                    return (
+                      <MessageBubble
+                        key={msg.id}
+                        message={mappedMsg}
+                        onImageClick={setLightboxImage}
+                      />
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </>
               )}
             </div>
 
@@ -269,6 +218,29 @@ export const SessionDetailModal = ({
           </div>
         ) : null}
       </DialogContent>
+
+      {/* Image Lightbox */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxImage(null)}
+        >
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 text-white hover:bg-white/20"
+            onClick={() => setLightboxImage(null)}
+          >
+            <X className="h-6 w-6" />
+          </Button>
+          <img
+            src={lightboxImage}
+            alt="Preview"
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </Dialog>
   );
 };

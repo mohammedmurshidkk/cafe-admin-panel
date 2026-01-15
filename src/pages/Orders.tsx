@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Search, Filter, Truck, Store, RefreshCw, Loader2 } from 'lucide-react';
+import { Search, Filter, Truck, Store, RefreshCw, Loader2, UserPlus } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { OrderDetailModal } from '@/components/orders/OrderDetailModal';
+import { AssignDeliveryModal } from '@/components/orders/AssignDeliveryModal';
 import {
   Select,
   SelectContent,
@@ -59,6 +60,7 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [page, setPage] = useState(1);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [assignOrder, setAssignOrder] = useState<Order | null>(null);
 
   const handleRowClick = (item: Order) => {
     setSelectedOrder(item);
@@ -150,6 +152,26 @@ const Orders = () => {
       render: (order: Order) => formatDateTime(order.created_at),
       className: 'hidden lg:table-cell',
     },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (order: Order) => (
+        order.fulfillment_type === 'delivery' ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setAssignOrder(order);
+            }}
+            className="gap-1"
+          >
+            <UserPlus className="h-3 w-3" />
+            Assign
+          </Button>
+        ) : null
+      ),
+    },
   ];
 
   return (
@@ -208,6 +230,12 @@ const Orders = () => {
         onClose={() => setSelectedOrder(null)}
         onStatusChange={handleStatusChange}
         isUpdating={isUpdating}
+      />
+
+      {/* Assign Delivery Modal */}
+      <AssignDeliveryModal
+        order={assignOrder}
+        onClose={() => setAssignOrder(null)}
       />
     </div>
   );

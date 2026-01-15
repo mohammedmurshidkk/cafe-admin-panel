@@ -352,6 +352,19 @@ export const cakePricingApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['CakeQuotes'],
     }),
+
+    uploadFlavors: builder.mutation<ApiResponse<{ flavorsCreated: number; flavorsUpdated: number }>, { file: File; replace?: boolean }>({
+      query: ({ file, replace }) => {
+        const formData = new FormData();
+        formData.append('flavors', file);
+        return {
+          url: `/admin/cake-pricing/flavors/upload${replace ? '?replace=true' : ''}`,
+          method: 'POST',
+          body: formData,
+        };
+      },
+      invalidatesTags: ['CakePricing'],
+    }),
   }),
 });
 
@@ -383,4 +396,5 @@ export const {
   useCancelCakeQuoteMutation,
   useConfirmCakeQuoteTimeMutation,
   useRejectCakeQuoteTimeMutation,
+  useUploadFlavorsMutation,
 } = cakePricingApi;

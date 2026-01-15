@@ -109,6 +109,25 @@ export interface OrdersResponse {
   pagination: Pagination;
 }
 
+// Delivery Boy types
+export interface DeliveryBoy {
+  id: string;
+  name: string;
+  phone: string;
+  is_available?: boolean;
+  created_at?: string;
+}
+
+export interface DeliveryBoysResponse {
+  delivery_boys: DeliveryBoy[];
+  pagination?: Pagination;
+}
+
+export interface AssignOrderRequest {
+  delivery_boy_id: string;
+  admin_note?: string;
+}
+
 // Session types
 export type SessionStatus = 'active' | 'completed';
 
@@ -128,16 +147,9 @@ export interface SessionItem {
   unit_price?: number;
 }
 
-export interface SessionMessage {
-  id: string;
-  direction: 'inbound' | 'outbound' | 'incoming' | 'outgoing';
-  content: string;
-  created_at: string;
-}
-
 export interface SessionDetail {
   session: Session & { items: OrderItem[] };
-  messages: SessionMessage[];
+  messages: ChatMessage[];
 }
 
 export interface SessionsResponse {

@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store/store';
 import {
   Building2,
   MapPin,
@@ -17,7 +19,9 @@ import {
   Upload,
   Cake,
   GripVertical,
-  Clock
+  Clock,
+  FileSpreadsheet,
+  Download
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -58,6 +62,7 @@ import {
   useUpdateDesignElementMutation,
   useDeleteDesignElementMutation,
   useSeedDesignElementsMutation,
+  useUploadFlavorsMutation,
   WeightPricing,
   FlavorPricing,
   FlavorSize,
@@ -68,6 +73,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const CompanyProfile = () => {
+  const { token, viewingBusiness } = useSelector((state: RootState) => state.auth);
   const { data, isLoading } = useGetBusinessProfileQuery();
   const [updateProfile, { isLoading: isSaving }] = useUpdateBusinessProfileMutation();
   const [uploadLogo, { isLoading: isUploadingLogo }] = useUploadBusinessLogoMutation();
@@ -90,6 +96,7 @@ const CompanyProfile = () => {
   const [seedDesignElements, { isLoading: isSeeding }] = useSeedDesignElementsMutation();
 
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const flavorImportRef = useRef<HTMLInputElement>(null);
 
   // Form states
   const [businessName, setBusinessName] = useState('');
@@ -143,6 +150,7 @@ const CompanyProfile = () => {
   const [deleteFlavorItem, setDeleteFlavorItem] = useState<FlavorPricing | null>(null);
   const [deleteDesignItem, setDeleteDesignItem] = useState<DesignElement | null>(null);
 
+  const [uploadFlavors, { isLoading: isUploadingFlavors }] = useUploadFlavorsMutation();
   // Cake pricing form data
   const [weightFormData, setWeightFormData] = useState({ weight_grams: 500, base_price: 0 });
   const [flavorFormData, setFlavorFormData] = useState<{ flavor_name: string; sizes: FlavorSize[] }>({
@@ -440,9 +448,77 @@ const CompanyProfile = () => {
   const handleSeedElements = async () => {
     try {
       await seedDesignElements().unwrap();
-      toast.success('Standard design elements added');
-    } catch (error) {
-      toast.error('Failed to seed design elements');
+      toast.success('Standard elements added');
+    } catch (err: any) {
+      toast.error('Failed to seed elements');
+    }
+  };
+
+  const handleFlavorUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const response = await uploadFlavors({ file, replace: false }).unwrap();
+      if (response.success) {
+        toast.success(`Imported ${response.data.flavorsCreated} new and updated ${response.data.flavorsUpdated} flavors`);
+      }
+    } catch (err: any) {
+      toast.error(err.data?.message || 'Failed to upload flavors');
+    } finally {
+      if (flavorImportRef.current) flavorImportRef.current.value = '';
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (viewingBusiness?.id) headers['X-Business-Id'] = viewingBusiness.id;
+
+      const response = await fetch(`${apiUrl}/api/admin/cake-pricing/flavors/template`, {
+        headers
+      });
+
+      if (!response.ok) throw new Error('Download failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.body.appendChild(document.createElement('a'));
+      a.href = url;
+      a.download = 'flavors_template.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (err) {
+      toast.error('Failed to download template');
+    }
+  };
+
+  const handleExportFlavors = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || '';
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      if (viewingBusiness?.id) headers['X-Business-Id'] = viewingBusiness.id;
+
+      const response = await fetch(`${apiUrl}/api/admin/cake-pricing/flavors/export`, {
+        headers
+      });
+
+      if (!response.ok) throw new Error('Export failed');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.body.appendChild(document.createElement('a'));
+      a.href = url;
+      a.download = 'flavors_export.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (err) {
+      toast.error('Failed to export flavors');
     }
   };
 
@@ -962,12 +1038,50 @@ const CompanyProfile = () => {
 
               {/* Flavor Pricing Tab */}
               <TabsContent value="flavors" className="mt-4">
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-sm text-muted-foreground">Manage pricing by flavor and size</p>
-                  <Button variant="outline" size="sm" onClick={() => openFlavorModal()}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Flavor
-                  </Button>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Manage pricing by flavor and size</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      type="file"
+                      ref={flavorImportRef}
+                      onChange={handleFlavorUpload}
+                      accept=".csv"
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownloadTemplate()}
+                      title="Download CSV Template"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Template
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleExportFlavors()}
+                      title="Export Current Flavors"
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => flavorImportRef.current?.click()}
+                      disabled={isUploadingFlavors}
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      {isUploadingFlavors ? 'Importing...' : 'Import Excel'}
+                    </Button>
+                    <Button variant="outline" size="sm" className="bg-primary/5 border-primary/20 hover:bg-primary/10" onClick={() => openFlavorModal()}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Flavor
+                    </Button>
+                  </div>
                 </div>
 
                 {flavorPricing.length > 0 ? (
