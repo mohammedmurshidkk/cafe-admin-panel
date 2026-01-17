@@ -15,13 +15,14 @@ import { useInterventionSocket } from '@/hooks/useInterventionSocket';
 import { AiPauseToggle } from './AiPauseToggle';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Phone, X, Forward } from 'lucide-react';
+import { ArrowLeft, Phone, X, Forward, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatPhone } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { TimeConfirmationCard } from './interventions/TimeConfirmationCard';
 import { CustomCakeRequestCard } from './interventions/CustomCakeRequestCard';
 import { LocationConfirmationCard } from './interventions/LocationConfirmationCard';
+import { InterventionHistorySheet } from './InterventionHistorySheet';
 
 interface ChatViewProps {
   sessionId: string;
@@ -44,6 +45,7 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   // Message selection state for forwarding
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -79,7 +81,6 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
   const [resolveIntervention, { isLoading: isResolving }] = useResolveInterventionMutation();
   const [cancelIntervention, { isLoading: isCancelling }] = useCancelInterventionMutation();
   const { data: cakePricingData } = useGetCakePricingConfigQuery();
-
 
   // Find active intervention (pending or in_review)
   const pendingIntervention = interventionsData?.find(i =>
@@ -374,7 +375,17 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
         </div>
 
         {session && (
-          <AiPauseToggle sessionId={sessionId} isPaused={session.ai_paused} />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setHistoryOpen(true)}
+              title="Intervention History"
+            >
+              <History className="h-5 w-5" />
+            </Button>
+            <AiPauseToggle sessionId={sessionId} isPaused={session.ai_paused} />
+          </div>
         )}
 
         {onClose && (
@@ -520,12 +531,17 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
         </div>
       )}
 
-      {/* Forward Message Modal */}
       <ForwardMessageModal
         isOpen={forwardModalOpen}
         onClose={handleCloseForwardModal}
         messages={messagesToForward}
         currentSessionId={sessionId}
+      />
+
+      <InterventionHistorySheet
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        sessionId={sessionId}
       />
     </div>
   );

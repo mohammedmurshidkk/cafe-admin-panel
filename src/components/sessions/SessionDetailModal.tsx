@@ -11,8 +11,10 @@ import {
   Play,
   ShoppingCart,
   RefreshCw,
-  X
+  X,
+  History
 } from 'lucide-react';
+import { InterventionHistorySheet } from '../chat/InterventionHistorySheet';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +43,7 @@ export const SessionDetailModal = ({
   isRefreshing = false,
 }: SessionDetailModalProps) => {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto scroll to bottom when messages change
@@ -86,14 +89,24 @@ export const SessionDetailModal = ({
                 </div>
                 <div className="flex items-center gap-2 mr-8">
                   {onRefresh && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={onRefresh}
-                      disabled={isRefreshing}
-                    >
-                      <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setHistoryOpen(true)}
+                        title="Intervention History"
+                      >
+                        <History className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={onRefresh}
+                        disabled={isRefreshing}
+                      >
+                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </div>
                   )}
                   {onToggleAi && (
                     <Button
@@ -241,6 +254,11 @@ export const SessionDetailModal = ({
           />
         </div>
       )}
+      <InterventionHistorySheet
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        sessionId={sessionDetail?.session.id || ''}
+      />
     </Dialog>
   );
 };
