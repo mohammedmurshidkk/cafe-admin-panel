@@ -4,7 +4,8 @@ import {
   ClipboardList,
   MessagesSquare,
   UtensilsCrossed,
-  MoreHorizontal
+  MoreHorizontal,
+  Truck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -28,6 +29,7 @@ const moreNavItems = [
   { path: '/categories', label: 'Categories', icon: FolderOpen },
   { path: '/addons', label: 'Addons', icon: PlusCircle },
   { path: '/amenities', label: 'Amenities', icon: Sparkles },
+  { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck },
   { path: '/company', label: 'Company Profile', icon: Building2 },
 ];
 
@@ -62,8 +64,8 @@ export const BottomNav = () => {
               to={targetPath}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors",
-                isActive 
-                  ? "text-primary" 
+                isActive
+                  ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -72,14 +74,14 @@ export const BottomNav = () => {
             </NavLink>
           );
         })}
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
                 "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors",
-                isMoreActive 
-                  ? "text-primary" 
+                isMoreActive
+                  ? "text-primary"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -99,7 +101,7 @@ export const BottomNav = () => {
                 </DropdownMenuItem>
               );
             })}
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={logout}
               className="text-destructive focus:text-destructive"
             >
