@@ -69,8 +69,12 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [initialScrollDone, setInitialScrollDone] = useState(false);
   const [isUserNearBottom, setIsUserNearBottom] = useState(true);
+  const lastProcessedDataRef = useRef<string | null>(null); // Track processed data to avoid duplicates
 
-  const { data, isLoading } = useGetSessionMessagesQuery({ sessionId });
+  const { data, isLoading, isFetching } = useGetSessionMessagesQuery(
+    { sessionId },
+    { refetchOnMountOrArgChange: true } // Force refetch when sessionId changes
+  );
   const [fetchMoreMessages] = useLazyGetSessionMessagesQuery();
   const [markAsRead] = useMarkSessionAsReadMutation();
 
@@ -87,23 +91,52 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
     ['pending', 'in_review'].includes(i.status)
   );
 
-  console.log('interventionsData', interventionsData, pendingIntervention, quoteDismissed);
-
   const session = data?.data?.session;
   const customer = data?.data?.customer;
   const messages = data?.data?.messages || [];
 
-  // Initial load - Set messages from page 1 (which should be newest 50)
+  // Create a signature of the data to detect changes
+  const dataSignature = data?.data?.messages?.[0]?.id + '-' + data?.data?.messages?.length;
+
+  // Unified effect to handle message updates (both initial and real-time)
   useEffect(() => {
-    if (data?.data?.messages && currentPage === 1) {
-      // Create a new array and reverse to show oldest -> newest (bottom)
-      // Assumption: API returns [Newest, ..., Oldest] (descending order)
-      const sortedMessages = [...data.data.messages].reverse();
+    if (!data?.data?.messages || isFetching) return;
+
+    // Skip if we've already processed this exact data
+    if (lastProcessedDataRef.current === dataSignature) return;
+
+    const apiMessages = data.data.messages;
+
+    // Check if this is initial load (no messages yet) or a session change
+    if (allMessages.length === 0) {
+      // Initial load - replace all messages
+      const sortedMessages = [...apiMessages].reverse();
       setAllMessages(sortedMessages);
       setHasMore(data.data.pagination.hasMore);
       setInitialScrollDone(true);
+      lastProcessedDataRef.current = dataSignature;
+      return;
     }
-  }, [data, currentPage, sessionId]); // sessionId ensures re-run when switching back to cached session
+
+    // Real-time update - only add new messages using functional update to get latest state
+    setAllMessages(prev => {
+      const localIds = new Set(prev.map(m => m.id));
+      const newMessages = apiMessages.filter(m => !localIds.has(m.id)).reverse();
+
+      if (newMessages.length > 0) {
+        // Auto-scroll if user is near bottom
+        if (isUserNearBottom) {
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }
+        return [...prev, ...newMessages];
+      }
+      return prev;
+    });
+
+    lastProcessedDataRef.current = dataSignature;
+  }, [data, isFetching, dataSignature, isUserNearBottom, allMessages.length]);
 
   // Track if user is near bottom (for auto-scroll decision)
   useEffect(() => {
@@ -119,30 +152,6 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Handle real-time updates (new messages appearing in page 1 cache)
-  useEffect(() => {
-    if (data?.data?.messages && allMessages.length > 0) {
-      const latestFromCache = data.data.messages[0]; // Assuming newest is first
-      const latestLocal = allMessages[allMessages.length - 1]; // Newest is last
-
-      if (latestFromCache && latestLocal && latestFromCache.id !== latestLocal.id) {
-        // Find all new messages that are not in our local state
-        const localIds = new Set(allMessages.map(m => m.id));
-        const newMessages = data.data.messages.filter(m => !localIds.has(m.id)).reverse();
-
-        if (newMessages.length > 0) {
-          setAllMessages(prev => [...prev, ...newMessages]);
-          // Only auto-scroll if user is near bottom (WhatsApp behavior)
-          if (isUserNearBottom) {
-            setTimeout(() => {
-              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-          }
-        }
-      }
-    }
-  }, [data, allMessages, isUserNearBottom]);
 
   useEffect(() => {
     if (sessionId) {
@@ -166,6 +175,7 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
     setAllMessages([]);
     setInitialScrollDone(false);
     setIsUserNearBottom(true);
+    lastProcessedDataRef.current = null; // Reset data tracking
     // Reset selection state
     setIsSelectionMode(false);
     setSelectedMessageIds(new Set());
@@ -326,7 +336,7 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
 
   const displayName = customer?.name || customer?.phone || 'Unknown';
 
-  if (isLoading && currentPage === 1) {
+  if ((isLoading || isFetching) && currentPage === 1 && allMessages.length === 0) {
     return (
       <div className={cn('flex flex-col h-full bg-background', className)}>
         <div className="p-4 border-b border-border flex items-center gap-3">

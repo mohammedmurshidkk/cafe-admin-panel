@@ -10,7 +10,8 @@ import {
   Building2,
   LogOut,
   X,
-  Sparkles
+  Sparkles,
+  Truck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,6 +32,7 @@ const navItems = [
   { path: '/categories', label: 'Categories', icon: FolderOpen },
   { path: '/addons', label: 'Addons', icon: PlusCircle },
   { path: '/amenities', label: 'Amenities', icon: Sparkles },
+  { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck },
   { path: '/company', label: 'Company Profile', icon: Building2 },
 ];
 
@@ -59,7 +61,7 @@ export const MobileSidebar = ({ open, onClose }: MobileSidebarProps) => {
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
-            
+
             return (
               <NavLink
                 key={item.path}

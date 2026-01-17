@@ -30,7 +30,7 @@ export const chatApi = apiSlice.injectEndpoints({
       SessionMessagesResponse,
       { sessionId: string; page?: number; limit?: number }
     >({
-      query: ({ sessionId, page = 1, limit = 50 }) =>
+      query: ({ sessionId, page = 1, limit = 20 }) =>
         `admin/chat/sessions/${sessionId}?page=${page}&limit=${limit}`,
       providesTags: (_result, _error, { sessionId }) => [
         { type: 'Messages', id: sessionId },
@@ -49,24 +49,29 @@ export const chatApi = apiSlice.injectEndpoints({
       async onQueryStarted({ sessionId, message }, { dispatch, queryFulfilled }) {
         try {
           const { data: response } = await queryFulfilled;
-          // Add the new message to the cache
-          dispatch(
-            chatApi.util.updateQueryData(
-              'getSessionMessages',
-              { sessionId },
-              (draft) => {
-                // Handle both nested and flat response structures
-                const messages = draft?.messages || draft.data?.messages;
-                const newMessage = response?.message || response.data?.message;
-                if (messages && newMessage) {
-                  const exists = messages.some((m: ChatMessage) => m.id === newMessage.id);
-                  if (!exists) {
-                    messages.push(newMessage);
+          const newMessage = response?.message || response?.data?.message;
+
+          if (newMessage) {
+            // Add the new message to the cache
+            dispatch(
+              chatApi.util.updateQueryData(
+                'getSessionMessages',
+                { sessionId },
+                (draft) => {
+                  // Handle nested response structure
+                  const messages = draft?.data?.messages;
+                  if (messages) {
+                    const exists = messages.some((m: ChatMessage) => m.id === newMessage.id);
+                    if (!exists) {
+                      // API returns newest first, so unshift to add at beginning
+                      messages.unshift(newMessage);
+                    }
                   }
                 }
-              }
-            )
-          );
+              )
+            );
+          }
+
           // Invalidate sessions to update last_message
           dispatch(chatApi.util.invalidateTags(['ChatSessions']));
           // If quote was sent, invalidate CakeQuotes to refresh pending quote
@@ -141,6 +146,7 @@ export const chatApi = apiSlice.injectEndpoints({
 
 export const {
   useGetChatSessionsQuery,
+  useLazyGetChatSessionsQuery,
   useGetSessionMessagesQuery,
   useLazyGetSessionMessagesQuery,
   useSendMessageMutation,

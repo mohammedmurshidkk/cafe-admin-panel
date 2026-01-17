@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { useGetChatSessionsQuery } from '@/store/api/chatApi';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useGetChatSessionsQuery, useLazyGetChatSessionsQuery } from '@/store/api/chatApi';
 import { SessionItem } from './SessionItem';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, MessageSquare } from 'lucide-react';
-import { ChatSessionStatus } from '@/types';
+import { ChatSession, ChatSessionStatus } from '@/types';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface SessionListProps {
   selectedSessionId: string | null;
@@ -20,6 +21,8 @@ const statusFilters: { label: string; value: ChatSessionStatus | 'all' }[] = [
   { label: 'Completed', value: 'completed' },
 ];
 
+const SESSIONS_LIMIT = 20;
+
 export const SessionList = ({
   selectedSessionId,
   onSelectSession,
@@ -28,14 +31,88 @@ export const SessionList = ({
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ChatSessionStatus | 'all'>('active');
 
-  const { data, isLoading } = useGetChatSessionsQuery({
+  // Infinite scroll states
+  const [allSessions, setAllSessions] = useState<ChatSession[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const { data, isLoading, isFetching } = useGetChatSessionsQuery({
     status: statusFilter,
-    limit: 50,
+    limit: SESSIONS_LIMIT,
+    page: 1,
   });
+  const [fetchMoreSessions] = useLazyGetChatSessionsQuery();
 
-  const sessions = data?.data?.sessions || [];
+  // Initialize sessions from first page
+  useEffect(() => {
+    if (data?.data?.sessions && !isFetching) {
+      setAllSessions(data.data.sessions);
+      const totalPages = data.data.pagination.totalPages;
+      setHasMore(data.data.pagination.page < totalPages);
+      setCurrentPage(1);
+    }
+  }, [data, isFetching]);
 
-  const filteredSessions = sessions.filter((session) => {
+  // Reset when status filter changes
+  useEffect(() => {
+    setAllSessions([]);
+    setCurrentPage(1);
+    setHasMore(false);
+  }, [statusFilter]);
+
+  // Load more sessions
+  const handleLoadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    const nextPage = currentPage + 1;
+
+    try {
+      const result = await fetchMoreSessions({
+        status: statusFilter,
+        limit: SESSIONS_LIMIT,
+        page: nextPage,
+      }).unwrap();
+
+      if (result.data?.sessions) {
+        setAllSessions(prev => [...prev, ...result.data.sessions]);
+        const totalPages = result.data.pagination.totalPages;
+        setHasMore(result.data.pagination.page < totalPages);
+        setCurrentPage(nextPage);
+      }
+    } catch (error) {
+      console.error('Failed to load more sessions:', error);
+      toast.error('Failed to load more conversations');
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [currentPage, hasMore, isLoadingMore, statusFilter, fetchMoreSessions]);
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    if (!hasMore || isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore) {
+          handleLoadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '100px' }
+    );
+
+    if (loadMoreTriggerRef.current) {
+      observer.observe(loadMoreTriggerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingMore, handleLoadMore]);
+
+  // Filter sessions locally by search
+  const filteredSessions = allSessions.filter((session) => {
     if (!search) return true;
     const searchLower = search.toLowerCase();
     return (
@@ -81,7 +158,7 @@ export const SessionList = ({
       </div>
 
       {/* Session List - Scrollable */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
         {isLoading ? (
           <div className="p-4 space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -100,14 +177,22 @@ export const SessionList = ({
             <p>No conversations found</p>
           </div>
         ) : (
-          filteredSessions.map((session) => (
-            <SessionItem
-              key={session.id}
-              session={session}
-              isSelected={session.id === selectedSessionId}
-              onClick={() => onSelectSession(session.id)}
-            />
-          ))
+          <>
+            {filteredSessions.map((session) => (
+              <SessionItem
+                key={session.id}
+                session={session}
+                isSelected={session.id === selectedSessionId}
+                onClick={() => onSelectSession(session.id)}
+              />
+            ))}
+            {/* Load more trigger */}
+            <div ref={loadMoreTriggerRef} className="py-2 flex justify-center">
+              {isLoadingMore && (
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

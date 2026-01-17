@@ -29,7 +29,7 @@ export const ForwardMessageModal = ({
 
   const { data, isLoading } = useGetChatSessionsQuery({
     status: 'active',
-    limit: 50,
+    limit: 20,
   });
   const [sendMessage] = useSendMessageMutation();
 
