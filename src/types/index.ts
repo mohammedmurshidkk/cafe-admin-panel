@@ -175,6 +175,8 @@ export interface MenuItem {
   is_customizable: boolean;
   requires_date: boolean;
   is_available: boolean;
+  is_featured?: boolean;
+  featured_order?: number;
   special_notes?: string;
   price?: number;
 }

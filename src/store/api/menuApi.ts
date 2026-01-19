@@ -28,6 +28,36 @@ export interface UpdateMenuPdfConfigRequest {
   is_active?: boolean;
 }
 
+// Popular Items Types
+export type PopularItemPeriod = 'today' | 'weekly' | 'monthly' | 'all_time';
+
+export interface PopularItem {
+  menu_item_id: string;
+  item_name: string;
+  order_count: number;
+  quantity_sold: number;
+  revenue: number;
+  is_featured: boolean;
+  featured_order: number | null;
+  trend_percentage?: number;
+  menu_item: {
+    id: string;
+    name: string;
+    description: string | null;
+    image_url: string | null;
+    sizes?: { name: string; price: number }[];
+  };
+}
+
+export interface PopularItemsResponse {
+  items: PopularItem[];
+  period: PopularItemPeriod;
+  stats: {
+    featured_count: number;
+    top_selling_count: number;
+  };
+}
+
 export const menuApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getMenuItems: builder.query<MenuResponse, { category?: string }>({
@@ -114,6 +144,28 @@ export const menuApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['MenuPdfConfigs'],
     }),
+
+    // === Popular Items Endpoints ===
+    getPopularItems: builder.query<PopularItemsResponse, { period?: PopularItemPeriod }>({
+      query: ({ period = 'weekly' }) => `admin/popular-items?period=${period}`,
+      providesTags: ['Menu'],
+    }),
+    toggleFeatured: builder.mutation<{ success: boolean; is_featured: boolean }, { itemId: string; is_featured: boolean }>({
+      query: ({ itemId, is_featured }) => ({
+        url: `admin/menu/${itemId}/featured`,
+        method: 'PATCH',
+        body: { is_featured },
+      }),
+      invalidatesTags: ['Menu'],
+    }),
+    updateFeaturedOrder: builder.mutation<{ success: boolean }, { items: { id: string; featured_order: number }[] }>({
+      query: (body) => ({
+        url: 'admin/menu/featured/order',
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Menu'],
+    }),
   }),
 });
 
@@ -131,4 +183,8 @@ export const {
   useUpdateMenuPdfConfigMutation,
   useDeleteMenuPdfConfigMutation,
   useSyncMenuPdfConfigMutation,
+  // Popular Items hooks
+  useGetPopularItemsQuery,
+  useToggleFeaturedMutation,
+  useUpdateFeaturedOrderMutation,
 } = menuApi;

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload, Search, RefreshCw, FileText, ExternalLink, Settings } from 'lucide-react';
+import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload, Search, RefreshCw, FileText, ExternalLink, Settings, Star } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,12 +33,14 @@ import {
   useUpdateMenuPdfConfigMutation,
   useDeleteMenuPdfConfigMutation,
   useSyncMenuPdfConfigMutation,
+  useToggleFeaturedMutation,
   MenuPdfConfig,
 } from '@/store/api/menuApi';
 import { useGetCategoriesQuery } from '@/store/api/categoriesApi';
 import { MenuItem, MenuItemFormData } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
+import { FeaturedItemsModal } from '@/components/menu/FeaturedItemsModal';
 
 type PricingType = 'single' | 'sizes';
 type SizePrice = { name: string; price: number };
@@ -53,6 +55,7 @@ interface FormData {
   is_customizable: boolean;
   requires_date: boolean;
   is_available: boolean;
+  is_featured: boolean;
   special_notes: string;
 }
 
@@ -66,6 +69,7 @@ const defaultFormData: FormData = {
   is_customizable: false,
   requires_date: false,
   is_available: true,
+  is_featured: false,
   special_notes: '',
 };
 
@@ -95,6 +99,7 @@ const Menu = () => {
   const [uploadImage, { isLoading: isUploading }] = useUploadMenuItemImageMutation();
   const [syncMenuPdf, { isLoading: isSyncingPdf }] = useSyncMenuPdfMutation();
   const [getMenuPdf] = useLazyGetMenuPdfQuery();
+  const [toggleFeatured] = useToggleFeaturedMutation();
 
   // === PDF Config State ===
   const { data: pdfConfigs, isLoading: isLoadingConfigs } = useGetMenuPdfConfigsQuery();
@@ -109,6 +114,7 @@ const Menu = () => {
   const [deletePdfConfigItem, setDeletePdfConfigItem] = useState<MenuPdfConfig | null>(null);
   const [pdfConfigFormData, setPdfConfigFormData] = useState<{ name: string; name_local: string; categoryIds: string[] }>({ name: '', name_local: '', categoryIds: [] });
   const [syncingConfigId, setSyncingConfigId] = useState<string | null>(null);
+  const [isFeaturedModalOpen, setIsFeaturedModalOpen] = useState(false);
 
   // PDF Config Handlers
   const openPdfConfigModal = (config?: MenuPdfConfig) => {
@@ -191,6 +197,7 @@ const Menu = () => {
         is_customizable: item.is_customizable,
         requires_date: item.requires_date,
         is_available: item.is_available,
+        is_featured: item.is_featured || false,
         special_notes: item.special_notes || '',
       });
       setImagePreview(item.image_url || null);
@@ -253,6 +260,7 @@ const Menu = () => {
         is_customizable: formData.is_customizable,
         requires_date: formData.requires_date,
         is_available: formData.is_available,
+        is_featured: formData.is_featured,
         special_notes: formData.special_notes,
       };
 
@@ -309,6 +317,19 @@ const Menu = () => {
     }
   };
 
+  const handleToggleFeatured = async (item: MenuItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await toggleFeatured({
+        itemId: item.id,
+        is_featured: !item.is_featured
+      }).unwrap();
+      toast.success(item.is_featured ? 'Removed from featured' : 'Added to featured');
+    } catch (error) {
+      toast.error('Failed to update featured status');
+    }
+  };
+
   const handleSyncPdf = async () => {
     try {
       const result = await syncMenuPdf().unwrap();
@@ -334,6 +355,10 @@ const Menu = () => {
         description="Manage your menu items and prices"
         action={
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsFeaturedModalOpen(true)}>
+              <Star className="h-4 w-4 mr-2" />
+              Featured
+            </Button>
             <Button variant="outline" onClick={() => setIsPdfConfigsModalOpen(true)}>
               <FileText className="h-4 w-4 mr-2" />
               PDF Menus
@@ -425,7 +450,20 @@ const Menu = () => {
                       {item.is_available ? 'Available' : 'Unavailable'}
                     </span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => handleToggleFeatured(item, e)}
+                      title={item.is_featured ? 'Remove from featured' : 'Add to featured'}
+                    >
+                      <Star
+                        className={`h-4 w-4 transition-colors ${item.is_featured
+                          ? 'fill-amber-400 text-amber-400'
+                          : 'text-muted-foreground hover:text-amber-400'
+                          }`}
+                      />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => openForm(item)}>
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -643,6 +681,20 @@ const Menu = () => {
           </div>
           */}
 
+          {/* Featured Item Toggle */}
+          <div className="flex items-center space-x-3 py-2 px-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <Checkbox
+              id="featured"
+              checked={formData.is_featured}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_featured: !!checked }))}
+            />
+            <div className="flex-1">
+              <Label htmlFor="featured" className="font-medium cursor-pointer">Featured Item</Label>
+              <p className="text-xs text-muted-foreground">Show this item in featured section for customers</p>
+            </div>
+            <Star className={`h-5 w-5 ${formData.is_featured ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground'}`} />
+          </div>
+
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>
               Cancel
@@ -839,6 +891,12 @@ const Menu = () => {
         variant="destructive"
         onConfirm={handleDeletePdfConfig}
         isLoading={isDeletingConfig}
+      />
+
+      {/* Featured Items Modal */}
+      <FeaturedItemsModal
+        open={isFeaturedModalOpen}
+        onOpenChange={setIsFeaturedModalOpen}
       />
     </div>
   );

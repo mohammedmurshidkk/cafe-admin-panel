@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { 
-  ClipboardList, 
-  MessageSquare, 
-  Clock, 
+import {
+  ClipboardList,
+  MessageSquare,
+  Clock,
   DollarSign,
   Phone,
   ArrowRight,
@@ -17,6 +17,7 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { TrendingItemsWidget } from '@/components/dashboard/TrendingItemsWidget';
 import { OrderDetailModal } from '@/components/orders/OrderDetailModal';
 import { SessionDetailModal } from '@/components/sessions/SessionDetailModal';
 import { useGetDashboardStatsQuery } from '@/store/api/dashboardApi';
@@ -31,19 +32,19 @@ const Dashboard = () => {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   const { data: stats, isLoading: statsLoading } = useGetDashboardStatsQuery();
-  const { data: ordersData, isLoading: ordersLoading } = useGetRecentOrdersQuery({ 
+  const { data: ordersData, isLoading: ordersLoading } = useGetRecentOrdersQuery({
     limit: 5
   });
-  const { data: sessionsData, isLoading: sessionsLoading } = useGetRecentSessionsQuery({ 
-    status: 'active', 
-    limit: 5 
+  const { data: sessionsData, isLoading: sessionsLoading } = useGetRecentSessionsQuery({
+    status: 'active',
+    limit: 5
   });
 
   const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
   const [toggleAiPause, { isLoading: isToggling }] = useToggleAiPauseMutation();
-  
+
   const { data: sessionDetail, isLoading: detailLoading } = useGetSessionDetailQuery(
-    selectedSessionId!, 
+    selectedSessionId!,
     { skip: !selectedSessionId }
   );
 
@@ -60,9 +61,9 @@ const Dashboard = () => {
   const handleToggleAi = async (session: Session, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await toggleAiPause({ 
-        sessionId: session.id, 
-        paused: !session.ai_paused 
+      await toggleAiPause({
+        sessionId: session.id,
+        paused: !session.ai_paused
       }).unwrap();
       toast.success(session.ai_paused ? 'AI resumed' : 'AI paused');
     } catch (error) {
@@ -86,8 +87,8 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <PageHeader 
-        title="Dashboard" 
+      <PageHeader
+        title="Dashboard"
         description="Welcome back! Here's what's happening today."
       />
 
@@ -125,6 +126,9 @@ const Dashboard = () => {
         )}
       </div>
 
+      {/* Trending Items Widget */}
+      <TrendingItemsWidget />
+
       {/* Recent Activity */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
@@ -137,7 +141,7 @@ const Dashboard = () => {
               </Link>
             </Button>
           </div>
-          
+
           {ordersLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
@@ -147,7 +151,7 @@ const Dashboard = () => {
           ) : ordersData?.orders?.length ? (
             <div className="space-y-3">
               {ordersData?.orders.map((order) => (
-                <div 
+                <div
                   key={order.id}
                   onClick={() => setSelectedOrder(order)}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
@@ -201,7 +205,7 @@ const Dashboard = () => {
               </Link>
             </Button>
           </div>
-          
+
           {sessionsLoading ? (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
@@ -211,7 +215,7 @@ const Dashboard = () => {
           ) : sessionsData?.sessions?.length ? (
             <div className="space-y-3">
               {sessionsData.sessions.map((session) => (
-                <div 
+                <div
                   key={session.id}
                   onClick={() => setSelectedSessionId(session.id)}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
