@@ -10,7 +10,8 @@ import { BusinessStatsModal } from '@/components/superadmin/BusinessStatsModal';
 import { useGetAnalyticsOverviewQuery } from '@/store/api/superadminApi';
 import { AnalyticsBusiness } from '@/types';
 import { formatDate } from '@/utils/formatters';
-import { Building2, CheckCircle, Users, ShoppingCart, BarChart3 } from 'lucide-react';
+import { Building2, CheckCircle, Users, ShoppingCart, BarChart3, Shield, Activity } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const SuperAdminDashboard = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -112,6 +113,22 @@ const SuperAdminDashboard = () => {
       <PageHeader
         title="Tech Provider Dashboard"
         description="Overview of all businesses and analytics"
+        action={
+          <div className="flex gap-2">
+            <Link to="/superadmin/usage">
+              <Button variant="outline">
+                <Activity className="h-4 w-4 mr-2" />
+                Usage & Costs
+              </Button>
+            </Link>
+            <Link to="/superadmin/audit-logs">
+              <Button>
+                <Shield className="h-4 w-4 mr-2" />
+                Audit Logs
+              </Button>
+            </Link>
+          </div>
+        }
       />
 
       {/* Stats Cards */}

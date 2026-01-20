@@ -22,7 +22,7 @@ export const TimeConfirmationCard = ({
 }: TimeConfirmationCardProps) => {
     const [customMessage, setCustomMessage] = useState('');
 
-    const approvalMessage = `നിങ്ങളുടെ ഓർഡർ ആ സമയത്തിനുള്ളിൽ ഡെലിവർ ചെയ്യാൻ കഴിയും. ദയവായി നിങ്ങളുടെ ഓർഡർ സ്ഥിരീകരിക്കാൻ "Yes" എന്ന് പറയുക, നന്ദി!`;
+    const approvalMessage = `നിങ്ങളുടെ ഓർഡർ ആ സമയത്ത് ഡെലിവറി ചെയ്യാൻ കഴിയും. നിങ്ങളുടെ ഓർഡർ സ്ഥിരീകരിക്കാൻ "Yes" എന്ന് പറയുക, നന്ദി!`;
     const rejectionMessage = `ക്ഷമിക്കണം, നിങ്ങൾ അഭ്യർത്ഥിച്ച സമയത്ത് ഞങ്ങൾക്ക് ഡെലിവർ ചെയ്യാൻ കഴിയില്ല. ദയവായി മറ്റൊരു സമയം തിരഞ്ഞെടുക്കുക.`;
 
     // Render collapsed view

@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGetChatSessionsQuery, useLazyGetChatSessionsQuery } from '@/store/api/chatApi';
+import { useGetInterventionsQuery } from '@/store/api/interventionApi';
+import { useInterventionSocket } from '@/hooks/useInterventionSocket';
 import { SessionItem } from './SessionItem';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +14,7 @@ import { toast } from 'sonner';
 interface SessionListProps {
   selectedSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
+  onPeekSession?: (sessionId: string) => void;
   className?: string;
 }
 
@@ -26,6 +29,7 @@ const SESSIONS_LIMIT = 20;
 export const SessionList = ({
   selectedSessionId,
   onSelectSession,
+  onPeekSession,
   className,
 }: SessionListProps) => {
   const [search, setSearch] = useState('');
@@ -45,6 +49,17 @@ export const SessionList = ({
     page: 1,
   });
   const [fetchMoreSessions] = useLazyGetChatSessionsQuery();
+
+  // Listen for real-time intervention updates
+  useInterventionSocket();
+
+  // Fetch pending interventions to highlight sessions
+  const { data: interventionsData } = useGetInterventionsQuery({
+    status: 'pending',
+    limit: 100,
+  });
+
+  const pendingSessionIds = new Set(interventionsData?.map(i => i.session_id) || []);
 
   // Initialize sessions from first page
   useEffect(() => {
@@ -183,7 +198,12 @@ export const SessionList = ({
                 key={session.id}
                 session={session}
                 isSelected={session.id === selectedSessionId}
+                hasPendingIntervention={pendingSessionIds.has(session.id)}
                 onClick={() => onSelectSession(session.id)}
+                onPeek={onPeekSession ? (e) => {
+                  e.stopPropagation();
+                  onPeekSession(session.id);
+                } : undefined}
               />
             ))}
             {/* Load more trigger */}

@@ -20,6 +20,7 @@ import InterventionsPage from './pages/InterventionsPage';
 import AdminChat from './pages/AdminChat';
 import SuperadminBusinesses from './pages/SuperadminBusinesses';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import SuperAdminAuditLogs from './pages/SuperAdminAuditLogs';
 import { UsageDashboard } from './components/usage/UsageDashboard';
 import { BusinessUsageDetail } from './components/usage/BusinessUsageDetail';
 import { CostManagement } from './components/usage/CostManagement';
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/superadmin" element={<SuperadminLayout />}>
             <Route path="dashboard" element={<SuperAdminDashboard />} />
             <Route path="businesses" element={<SuperadminBusinesses />} />
+            <Route path="audit-logs" element={<SuperAdminAuditLogs />} />
             <Route path="usage" element={<UsageDashboard />} />
             <Route path="usage/business/:businessId" element={<BusinessUsageDetail />} />
             <Route path="usage/costs" element={<CostManagement />} />

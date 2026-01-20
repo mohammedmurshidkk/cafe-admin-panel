@@ -67,7 +67,7 @@ interface ListInterventionsParams {
 
 export const interventionApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        getInterventions: builder.query<ApiResponse<Intervention[]>, ListInterventionsParams>({
+        getInterventions: builder.query<Intervention[], ListInterventionsParams>({
             query: (params) => ({
                 url: '/admin/interventions/',
                 params,

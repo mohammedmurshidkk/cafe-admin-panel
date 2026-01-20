@@ -39,26 +39,37 @@ export const useInterventionSocket = (options: UseInterventionSocketOptions = {}
 
         // Listen for intervention created
         socketRef.current.on('intervention_created', (data: any) => {
+            // Invalidate tags to force refetch
             dispatch(cakePricingApi.util.invalidateTags(['CakeQuotes', 'CakePricing']));
-            // Also invalidate the new Interventions API
             dispatch({ type: 'api/invalidateTags', payload: ['Interventions'] });
+
+            // Force specific session invalidation if session_id is present
+            if (data?.session_id) {
+                dispatch({ type: 'api/invalidateTags', payload: [{ type: 'Interventions', id: data.session_id }] });
+            }
+
             toast.info('New Intervention Required', {
                 description: `New ${data.type?.replace('_', ' ') || 'request'} received`,
             });
         });
 
         // Listen for intervention updated
-        socketRef.current.on('intervention_updated', () => {
+        socketRef.current.on('intervention_updated', (data: any) => {
             dispatch(cakePricingApi.util.invalidateTags(['CakeQuotes', 'CakePricing']));
             dispatch({ type: 'api/invalidateTags', payload: ['Interventions'] });
+
+            if (data?.session_id) {
+                dispatch({ type: 'api/invalidateTags', payload: [{ type: 'Interventions', id: data.session_id }] });
+            }
         });
 
-        // Listen for intervention resolved
         // Listen for intervention resolved
         socketRef.current.on('intervention_resolved', (data: any) => {
             dispatch(cakePricingApi.util.invalidateTags(['CakeQuotes', 'CakePricing']));
             dispatch({ type: 'api/invalidateTags', payload: ['Interventions'] });
+
             if (data?.session_id) {
+                dispatch({ type: 'api/invalidateTags', payload: [{ type: 'Interventions', id: data.session_id }] });
                 dispatch({ type: 'api/invalidateTags', payload: [{ type: 'Messages', id: data.session_id }] });
             }
         });

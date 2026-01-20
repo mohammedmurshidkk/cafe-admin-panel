@@ -15,19 +15,21 @@ import { useInterventionSocket } from '@/hooks/useInterventionSocket';
 import { AiPauseToggle } from './AiPauseToggle';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Phone, X, Forward, History } from 'lucide-react';
+import { ArrowLeft, Phone, X, Forward, History, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatPhone } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { TimeConfirmationCard } from './interventions/TimeConfirmationCard';
 import { CustomCakeRequestCard } from './interventions/CustomCakeRequestCard';
 import { LocationConfirmationCard } from './interventions/LocationConfirmationCard';
+import { GenericInterventionCard } from './interventions/GenericInterventionCard';
 import { InterventionHistorySheet } from './InterventionHistorySheet';
 
 interface ChatViewProps {
   sessionId: string;
   onBack?: () => void;
   onClose?: () => void;
+  isPeekMode?: boolean;
   className?: string;
 }
 
@@ -39,7 +41,7 @@ const formatWeight = (g: number | string | undefined) => {
   return weight >= 1000 ? `${weight / 1000}kg` : `${weight}g`;
 };
 
-export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProps) => {
+export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: ChatViewProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
@@ -90,6 +92,14 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
   const pendingIntervention = interventionsData?.find(i =>
     ['pending', 'in_review'].includes(i.status)
   );
+
+  // Reset dismissed state when a new intervention appears
+  useEffect(() => {
+    if (pendingIntervention?.id) {
+      setQuoteDismissed(false);
+      setQuoteExpanded(true);
+    }
+  }, [pendingIntervention?.id]);
 
   const session = data?.data?.session;
   const customer = data?.data?.customer;
@@ -154,10 +164,10 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
   }, []);
 
   useEffect(() => {
-    if (sessionId) {
+    if (sessionId && !isPeekMode) {
       markAsRead(sessionId);
     }
-  }, [sessionId, markAsRead]);
+  }, [sessionId, markAsRead, isPeekMode]);
 
   // Initial scroll to bottom
   useEffect(() => {
@@ -407,6 +417,14 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
             <X className="h-5 w-5" />
           </Button>
         )}
+
+        {/* Peek Mode Indicator */}
+        {isPeekMode && (
+          <div className="absolute top-12 left-0 right-0 bg-yellow-100/90 dark:bg-yellow-900/90 text-yellow-800 dark:text-yellow-200 text-xs px-2 py-1 flex items-center justify-center gap-1.5 backdrop-blur-sm z-10 font-medium">
+            <Eye className="h-3 w-3" />
+            Peek Mode - Messages not marked as read
+          </div>
+        )}
       </div>
 
       {/* Selection Toolbar */}
@@ -478,19 +496,28 @@ export const ChatView = ({ sessionId, onBack, onClose, className }: ChatViewProp
           <div className="bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10 border-b border-purple-200/50 dark:border-purple-800/50">
             {/* TIME CONFIRMATION CARD (for time and urgent delivery) */}
             {(pendingIntervention.type === 'custom_cake_time_confirmation' || pendingIntervention.type === 'urgent_delivery') ? (
-              <TimeConfirmationCard
+              <>
+                <TimeConfirmationCard
+                  intervention={pendingIntervention}
+                  isExpanded={quoteExpanded}
+                  onExpandToggle={setQuoteExpanded}
+                  onResolve={(approved, message) => handleResolve(approved, undefined, message)}
+                  isResolving={isResolving}
+                />
+                <LocationConfirmationCard
+                  intervention={pendingIntervention}
+                  isExpanded={quoteExpanded}
+                  onExpandToggle={setQuoteExpanded}
+                  onResolve={(approved, message, customDeliveryFee) => handleResolve(approved, undefined, message, customDeliveryFee)}
+                  isResolving={isResolving}
+                />
+              </>
+            ) : pendingIntervention.type === 'other' ? (
+              <GenericInterventionCard
                 intervention={pendingIntervention}
                 isExpanded={quoteExpanded}
                 onExpandToggle={setQuoteExpanded}
                 onResolve={(approved, message) => handleResolve(approved, undefined, message)}
-                isResolving={isResolving}
-              />
-            ) : pendingIntervention.type === 'out_of_radius' ? (
-              <LocationConfirmationCard
-                intervention={pendingIntervention}
-                isExpanded={quoteExpanded}
-                onExpandToggle={setQuoteExpanded}
-                onResolve={(approved, message, customDeliveryFee) => handleResolve(approved, undefined, message, customDeliveryFee)}
                 isResolving={isResolving}
               />
             ) : (

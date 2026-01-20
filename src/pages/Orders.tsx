@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, Truck, Store, RefreshCw, Loader2, UserPlus } from 'lucide-react';
+import { Search, Filter, Truck, Store, RefreshCw, Loader2, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +59,7 @@ const Orders = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [page, setPage] = useState(1);
+  const itemsPerPage = 20;
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [assignOrder, setAssignOrder] = useState<Order | null>(null);
 
@@ -70,7 +71,7 @@ const Orders = () => {
     status: statusFilter === 'all' ? '' : statusFilter,
     search,
     page,
-    limit: 20
+    limit: itemsPerPage
   });
   const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
 
@@ -223,6 +224,38 @@ const Orders = () => {
         onRowClick={handleRowClick}
         emptyMessage="No orders found"
       />
+
+      {/* Pagination */}
+      {data?.pagination && (
+        <div className="flex items-center justify-between border-t border-border pt-4">
+          <p className="text-sm text-muted-foreground">
+            Showing {(page - 1) * itemsPerPage + 1} to {Math.min(page * itemsPerPage, data.pagination.total)} of {data.pagination.total} orders
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1 || isLoading}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            <div className="text-sm font-medium">
+              Page {page} of {Math.ceil(data.pagination.total / itemsPerPage)}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage(p => p + 1)}
+              disabled={page >= Math.ceil(data.pagination.total / itemsPerPage) || isLoading}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Order Detail Modal */}
       <OrderDetailModal
