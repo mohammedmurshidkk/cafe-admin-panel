@@ -48,15 +48,37 @@ export const MessagePreview = ({
 
         const replacePlaceholders = (text: string, params: string[]) => {
             let result = text;
-            params.forEach((param, index) => {
-                const placeholder = `{{${index + 1}}}`;
-                const value = param.trim() || `[Var ${index + 1}]`;
-                result = result.replace(
-                    new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
-                    value
-                );
+            const matches = text.match(/{{([^}]+)}}/g);
+            if (!matches) return result;
+
+            matches.forEach((fullMatch, index) => {
+                // If we have a value for this position, substitute it
+                // Otherwise leave it as is or show placeholder
+                if (index < params.length && params[index]) {
+                    // We replace only the first occurrence of this specific match string if we iterate?
+                    // No, invalid logic if duplicates exist like {{name}} ... {{name}}.
+                    // But standard approach is index based mapping for bodyParameters.
+                    // If text is "{{event}} ... {{brand}}", params[0] is for event, params[1] is for brand.
+
+                    // To do this correctly without replacing all instances of {{event}} with the first param:
+                    // We should split or build string manually. But simple replace of first occurrence works if we iterate order.
+
+                    // Actually, replace() only replaces the first match by default.
+                    // So if we iterate matches in order, we can replace the first occurrence of that strings each time?
+                    // Wait, if result changes, we might replace something we just inserted? No, user input won't have {{}} usually.
+
+                    // Safer: Use a replacer function on the whole string?
+                    // But we need to map nth {{}} to nth param.
+                }
             });
-            return result;
+
+            // Better Approach: use replace with a counter
+            let matchIndex = 0;
+            return text.replace(/{{([^}]+)}}/g, (match) => {
+                const val = params[matchIndex];
+                matchIndex++;
+                return val ? val : match; // Keep placeholder if no value
+            });
         };
 
         // For headers, if it's dynamic text, we might need to handle it differently

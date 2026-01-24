@@ -69,18 +69,32 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
         excludedIds: initialData?.excluded_user_ids || [],
     });
 
+    // Helper to extract variables from text
+    const extractVariables = (text: string): string[] => {
+        const matches = text.match(/{{([^}]+)}}/g);
+        if (!matches) return [];
+        // Remove brackets and trim
+        return matches.map(m => m.replace(/{{|}}/g, '').trim());
+    };
+
     // Handle template selection
     useEffect(() => {
         if (templatesData?.templates && formData.templateName && !selectedTemplate) {
             const template = templatesData.templates.find(t => t.name === formData.templateName && (formData.languageCode ? t.language === formData.languageCode : true));
             if (template) {
                 setSelectedTemplate(template);
+
+                // Parse body parameters from text if metadata says 0 but text has them
+                const bodyComponent = template.components.find(c => c.type === 'BODY');
+                const variables = bodyComponent?.text ? extractVariables(bodyComponent.text) : [];
+                const paramCount = Math.max(template.parameterInfo.bodyParams, variables.length);
+
                 if (!initialData?.body_parameters) {
                     setFormData(prev => ({
                         ...prev,
                         templateId: template.id,
                         languageCode: template.language,
-                        bodyParameters: new Array(template.parameterInfo.bodyParams).fill(''),
+                        bodyParameters: new Array(paramCount).fill(''),
                     }));
                 } else {
                     setFormData(prev => ({
@@ -97,12 +111,18 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
         const template = templatesData?.templates.find(t => t.id === templateId);
         if (template) {
             setSelectedTemplate(template);
+
+            // Parse body parameters
+            const bodyComponent = template.components.find(c => c.type === 'BODY');
+            const variables = bodyComponent?.text ? extractVariables(bodyComponent.text) : [];
+            const paramCount = Math.max(template.parameterInfo.bodyParams, variables.length);
+
             setFormData(prev => ({
                 ...prev,
                 templateId,
                 templateName: template.name,
                 languageCode: template.language,
-                bodyParameters: new Array(template.parameterInfo.bodyParams).fill(''),
+                bodyParameters: new Array(paramCount).fill(''),
                 headerValue: '',
                 imageFile: null,
                 imageUrl: '',
@@ -148,7 +168,7 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
             toast.error('Document URL is required');
             return;
         }
-        if (hInfo.bodyParams > 0 && formData.bodyParameters.some((p) => !p.trim())) {
+        if (formData.bodyParameters.length > 0 && formData.bodyParameters.some((p) => !p.trim())) {
             toast.error('All body parameters are required');
             return;
         }
@@ -204,7 +224,7 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
                     }
                     components.push({ type: 'header', parameters: headerParams });
                 }
-                if (selectedTemplate.parameterInfo.bodyParams > 0) {
+                if (formData.bodyParameters.length > 0) {
                     components.push({
                         type: 'body',
                         parameters: formData.bodyParameters.map((text) => ({ type: 'text', text })),
@@ -395,33 +415,39 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
                                     )}
 
                                 {/* Body Parameters */}
-                                {selectedTemplate.parameterInfo.bodyParams > 0 && (
+                                {(selectedTemplate.parameterInfo.bodyParams > 0 || formData.bodyParameters.length > 0) && (
                                     <div className="space-y-4">
                                         <div className="flex items-center justify-between">
                                             <Label>Body Parameters</Label>
                                             <span className="text-xs text-muted-foreground">
-                                                {selectedTemplate.parameterInfo.bodyParams} required
+                                                {formData.bodyParameters.length} required
                                             </span>
                                         </div>
                                         <Alert className="bg-muted/50 border-none">
                                             <Info className="h-4 w-4" />
-                                            <AlertDescription className="text-xs font-mono">
+                                            <AlertDescription className="text-xs font-mono whitespace-pre-wrap">
                                                 {selectedTemplate.components.find((c) => c.type === 'BODY')?.text || ''}
                                             </AlertDescription>
                                         </Alert>
                                         <div className="grid gap-3">
-                                            {formData.bodyParameters.map((param, i) => (
-                                                <div key={i} className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-                                                        {i + 1}
+                                            {formData.bodyParameters.map((param, i) => {
+                                                const bodyText = selectedTemplate.components.find(c => c.type === 'BODY')?.text || '';
+                                                const matches = bodyText.match(/{{([^}]+)}}/g);
+                                                const varName = matches && matches[i] ? matches[i] : `{{${i + 1}}}`;
+
+                                                return (
+                                                    <div key={i} className="flex items-center gap-3">
+                                                        <div className="w-auto min-w-[32px] px-2 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                                                            {varName}
+                                                        </div>
+                                                        <Input
+                                                            placeholder={`Value for ${varName}`}
+                                                            value={param}
+                                                            onChange={(e) => handleParamChange(i, e.target.value)}
+                                                        />
                                                     </div>
-                                                    <Input
-                                                        placeholder={`Value for {{${i + 1}}}`}
-                                                        value={param}
-                                                        onChange={(e) => handleParamChange(i, e.target.value)}
-                                                    />
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}
@@ -433,7 +459,7 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
                                             Note: This template uses a static text header.
                                         </p>
                                     )}
-                                {selectedTemplate.parameterInfo.bodyParams === 0 && (
+                                {selectedTemplate.parameterInfo.bodyParams === 0 && formData.bodyParameters.length === 0 && (
                                     <p className="text-xs text-muted-foreground italic">
                                         Note: This template uses a static message body.
                                     </p>
