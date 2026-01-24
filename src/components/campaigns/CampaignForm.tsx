@@ -225,9 +225,21 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
                     components.push({ type: 'header', parameters: headerParams });
                 }
                 if (formData.bodyParameters.length > 0) {
+                    // Extract variable names from text to see if we need parameter_name
+                    const bodyText = selectedTemplate.components.find(c => c.type === 'BODY')?.text || '';
+                    const variableNames = extractVariables(bodyText);
+
                     components.push({
                         type: 'body',
-                        parameters: formData.bodyParameters.map((text) => ({ type: 'text', text })),
+                        parameters: formData.bodyParameters.map((text, i) => {
+                            const param: any = { type: 'text', text };
+                            // If we have a named variable at this index, include parameter_name
+                            // Note: extractVariables returns names in order of appearance
+                            if (variableNames[i]) {
+                                param.parameter_name = variableNames[i];
+                            }
+                            return param;
+                        }),
                     });
                 }
                 return {
