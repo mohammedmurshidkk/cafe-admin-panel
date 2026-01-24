@@ -11,7 +11,8 @@ import {
   LogOut,
   X,
   Sparkles,
-  Truck
+  Truck,
+  Megaphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,6 +35,7 @@ const navItems = [
   { path: '/amenities', label: 'Amenities', icon: Sparkles },
   { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck },
   { path: '/company', label: 'Company Profile', icon: Building2 },
+  { path: '/campaigns', label: 'Campaigns', icon: Megaphone },
 ];
 
 interface MobileSidebarProps {

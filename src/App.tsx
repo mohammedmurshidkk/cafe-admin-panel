@@ -25,6 +25,7 @@ import { UsageDashboard } from './components/usage/UsageDashboard';
 import { BusinessUsageDetail } from './components/usage/BusinessUsageDetail';
 import { CostManagement } from './components/usage/CostManagement';
 import NotFound from "./pages/NotFound";
+import Campaigns from "./pages/Campaigns";
 
 const App = () => (
   <Provider store={store}>
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/interventions" element={<InterventionsPage />} />
             <Route path="/chat/:sessionId?" element={<AdminChat />} />
+            <Route path="/campaigns" element={<Campaigns />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />

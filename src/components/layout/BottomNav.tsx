@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { FolderOpen, PlusCircle, Building2, LogOut, MessageSquare, Sparkles } from 'lucide-react';
+import { FolderOpen, PlusCircle, Building2, LogOut, MessageSquare, Sparkles, Megaphone } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const mainNavItems = [
@@ -31,6 +31,7 @@ const moreNavItems = [
   { path: '/amenities', label: 'Amenities', icon: Sparkles },
   { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck },
   { path: '/company', label: 'Company Profile', icon: Building2 },
+  { path: '/campaigns', label: 'Campaigns', icon: Megaphone },
 ];
 
 export const BottomNav = () => {

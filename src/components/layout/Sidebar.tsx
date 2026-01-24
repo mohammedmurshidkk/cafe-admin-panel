@@ -13,7 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Truck
+  Truck,
+  Megaphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,6 +31,7 @@ const navItems = [
   { path: '/amenities', label: 'Amenities', icon: Sparkles },
   { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck },
   { path: '/company', label: 'Company Profile', icon: Building2 },
+  { path: '/campaigns', label: 'Campaigns', icon: Megaphone },
 ];
 
 export const Sidebar = () => {
@@ -38,7 +40,7 @@ export const Sidebar = () => {
   const { user, logout } = useAuth();
 
   return (
-    <aside 
+    <aside
       className={cn(
         "hidden md:flex flex-col shrink-0 bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out",
         collapsed ? "w-16" : "w-64"
