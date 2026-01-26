@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
@@ -6,15 +6,35 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { ChangePasswordModal } from '@/components/auth/ChangePasswordModal';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [retryTimeout, setRetryTimeout] = useState<number | null>(null);
+
   const { login, isLoading, isAuthenticated } = useAuth();
   const { user } = useSelector((state: RootState) => state.auth);
+
+  // Countdown for rate limiting
+  useEffect(() => {
+    if (retryTimeout === null) return;
+
+    if (retryTimeout <= 0) {
+      setRetryTimeout(null);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setRetryTimeout((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [retryTimeout]);
 
   // Redirect based on role
   if (isAuthenticated && user) {
@@ -24,9 +44,24 @@ const Login = () => {
     return <Navigate to="/dashboard" replace />;
   }
 
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    if (m === 0) return `${s}s`;
+    return `${m}m ${s}s`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
+    setErrorMessage(null);
+
+    const result = await login(email, password);
+    if (!result.success) {
+      setErrorMessage(result.error || 'Invalid credentials');
+      if (result.retryAfter) {
+        setRetryTimeout(result.retryAfter);
+      }
+    }
   };
 
   return (
@@ -46,8 +81,22 @@ const Login = () => {
         {/* Login Card */}
         <div className="card-warm p-8">
           <h2 className="text-xl font-semibold mb-6 text-center">Welcome back</h2>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
+            {errorMessage && (
+              <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {errorMessage}
+                  {retryTimeout !== null && (
+                    <span className="block mt-1 font-medium italic text-xs">
+                      Please wait {formatTime(retryTimeout)} before trying again.
+                    </span>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -60,7 +109,7 @@ const Login = () => {
                 autoComplete="email"
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -78,13 +127,15 @@ const Login = () => {
               type="submit"
               className="w-full"
               variant="gradient"
-              disabled={isLoading}
+              disabled={isLoading || retryTimeout !== null}
             >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing in...
                 </>
+              ) : retryTimeout !== null ? (
+                `Try again in ${formatTime(retryTimeout)}`
               ) : (
                 'Sign in'
               )}

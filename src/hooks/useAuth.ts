@@ -25,8 +25,9 @@ export const useAuth = () => {
       return { success: true };
     } catch (error: any) {
       const message = error?.data?.error || 'Invalid credentials';
+      const retryAfter = error?.data?.retryAfter;
       toast.error(message);
-      return { success: false, error: message };
+      return { success: false, error: message, retryAfter };
     }
   };
 
