@@ -17,6 +17,11 @@ export interface Campaign {
     successful_sends: number;
     failed_sends: number;
     job_id?: string;
+    template_variables?: {
+        body_params?: string[];
+        header_params?: string[];
+        header_param?: string; // Deprecated but kept for compatibility
+    };
     created_at: string;
 }
 

@@ -5,7 +5,8 @@ import { Template } from '@/store/api/campaignsApi';
 
 interface MessagePreviewProps {
     image?: string | File | null;
-    headerValue?: string; // For dynamic text headers
+    headerValue?: string; // For static/media
+    headerParameters?: string[]; // For dynamic text
     bodyParameters: string[];
     template?: Template | null;
     // Fallbacks for history view
@@ -18,6 +19,7 @@ interface MessagePreviewProps {
 export const MessagePreview = ({
     image,
     headerValue,
+    headerParameters,
     bodyParameters,
     template,
     headerText,
@@ -85,8 +87,15 @@ export const MessagePreview = ({
         // but usually user provides the whole text or it has variables.
         // Based on parameterInfo.headerParams
         let renderedHeader = header?.text || '';
-        if (template.parameterInfo.headerType === 'TEXT' && template.parameterInfo.headerParams > 0) {
-            renderedHeader = headerValue || '[Header Text]';
+        if (template.parameterInfo.headerType === 'TEXT') {
+            if (template.parameterInfo.headerParams > 0 || (header?.text && header.text.includes('{{'))) {
+                // Use params if available, otherwise check headerValue (fallback)
+                if (headerParameters && headerParameters.length > 0) {
+                    renderedHeader = replacePlaceholders(header.text || '', headerParameters);
+                } else {
+                    renderedHeader = headerValue || '[Header Text]';
+                }
+            }
         }
 
         const renderedBody = body ? replacePlaceholders(body.text || '', bodyParameters) : '';
@@ -98,7 +107,7 @@ export const MessagePreview = ({
             footer: renderedFooter,
             headerFormat: header?.format,
         };
-    }, [template, headerValue, bodyParameters, headerText, bodyText, footerText, image]);
+    }, [template, headerValue, headerParameters, bodyParameters, headerText, bodyText, footerText, image]);
 
     return (
         <div className={cn('flex flex-col items-center', className)}>

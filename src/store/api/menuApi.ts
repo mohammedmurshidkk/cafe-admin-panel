@@ -166,6 +166,14 @@ export const menuApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Menu'],
     }),
+    uploadMenuCsv: builder.mutation<{ success: boolean; message: string }, { businessId: string; formData: FormData }>({
+      query: ({ businessId, formData }) => ({
+        url: `business/${businessId}/upload`,
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: ['Menu'],
+    }),
   }),
 });
 
@@ -187,4 +195,5 @@ export const {
   useGetPopularItemsQuery,
   useToggleFeaturedMutation,
   useUpdateFeaturedOrderMutation,
+  useUploadMenuCsvMutation,
 } = menuApi;

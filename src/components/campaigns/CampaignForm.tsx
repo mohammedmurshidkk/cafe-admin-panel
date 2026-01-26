@@ -53,7 +53,8 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
         templateName: initialData?.template_name || '',
         languageCode: initialData?.language_code || '',
         headerValue: '', // For text headers or video URLs
-        bodyParameters: initialData?.body_parameters || [] as string[],
+        bodyParameters: initialData?.body_parameters || initialData?.template_variables?.body_params || [] as string[],
+        headerParameters: initialData?.template_variables?.header_params || [] as string[],
         imageFile: null as File | null,
         imageUrl: initialData?.image_url || '',
         isScheduled: !!initialData?.scheduled_at,
@@ -77,6 +78,22 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
         return matches.map(m => m.replace(/{{|}}/g, '').trim());
     };
 
+    // Helper to extract header params from example object
+    const getHeaderParamsFromExample = (headerComp: any): string[] => {
+        if (headerComp?.example?.header_text_named_params) {
+            return headerComp.example.header_text_named_params.map((p: any) => p.param_name);
+        }
+        return [];
+    };
+
+    // Helper to extract body params from example object
+    const getBodyParamsFromExample = (bodyComp: any): string[] => {
+        if (bodyComp?.example?.body_text_named_params) {
+            return bodyComp.example.body_text_named_params.map((p: any) => p.param_name);
+        }
+        return [];
+    };
+
     // Handle template selection
     useEffect(() => {
         if (templatesData?.templates && formData.templateName && !selectedTemplate) {
@@ -84,23 +101,35 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
             if (template) {
                 setSelectedTemplate(template);
 
-                // Parse body parameters from text if metadata says 0 but text has them
+                // Parse body parameters from text or example object
                 const bodyComponent = template.components.find(c => c.type === 'BODY');
-                const variables = bodyComponent?.text ? extractVariables(bodyComponent.text) : [];
-                const paramCount = Math.max(template.parameterInfo.bodyParams, variables.length);
+                const bodyVariables = bodyComponent?.text ? extractVariables(bodyComponent.text) : [];
+                const bodyExampleParams = getBodyParamsFromExample(bodyComponent);
+                const bodyParamCount = Math.max(template.parameterInfo.bodyParams, bodyVariables.length, bodyExampleParams.length);
 
-                if (!initialData?.body_parameters) {
+                // Parse header parameters from text or example object
+                const headerComponent = template.components.find(c => c.type === 'HEADER');
+                const headerVariables = headerComponent?.text ? extractVariables(headerComponent.text) : [];
+                const headerExampleParams = getHeaderParamsFromExample(headerComponent);
+                const headerParamCount = Math.max(template.parameterInfo.headerParams, headerVariables.length, headerExampleParams.length);
+
+                if (!initialData?.body_parameters && !initialData?.template_variables?.body_params) {
                     setFormData(prev => ({
                         ...prev,
                         templateId: template.id,
                         languageCode: template.language,
-                        bodyParameters: new Array(paramCount).fill(''),
+                        bodyParameters: new Array(bodyParamCount).fill(''),
+                        headerParameters: new Array(headerParamCount).fill(''),
                     }));
                 } else {
                     setFormData(prev => ({
                         ...prev,
                         templateId: template.id,
                         languageCode: template.language,
+                        // Ensure header params are initialized if missing in initialData but required by template
+                        headerParameters: prev.headerParameters.length === 0 && headerParamCount > 0
+                            ? new Array(headerParamCount).fill('')
+                            : prev.headerParameters,
                     }));
                 }
             }
@@ -112,17 +141,25 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
         if (template) {
             setSelectedTemplate(template);
 
-            // Parse body parameters
+            // Parse body parameters from text or example object
             const bodyComponent = template.components.find(c => c.type === 'BODY');
-            const variables = bodyComponent?.text ? extractVariables(bodyComponent.text) : [];
-            const paramCount = Math.max(template.parameterInfo.bodyParams, variables.length);
+            const bodyVariables = bodyComponent?.text ? extractVariables(bodyComponent.text) : [];
+            const bodyExampleParams = getBodyParamsFromExample(bodyComponent);
+            const bodyParamCount = Math.max(template.parameterInfo.bodyParams, bodyVariables.length, bodyExampleParams.length);
+
+            // Parse header parameters from text or example object
+            const headerComponent = template.components.find(c => c.type === 'HEADER');
+            const headerVariables = headerComponent?.text ? extractVariables(headerComponent.text) : [];
+            const headerExampleParams = getHeaderParamsFromExample(headerComponent);
+            const headerParamCount = Math.max(template.parameterInfo.headerParams, headerVariables.length, headerExampleParams.length);
 
             setFormData(prev => ({
                 ...prev,
                 templateId,
                 templateName: template.name,
                 languageCode: template.language,
-                bodyParameters: new Array(paramCount).fill(''),
+                bodyParameters: new Array(bodyParamCount).fill(''),
+                headerParameters: new Array(headerParamCount).fill(''),
                 headerValue: '',
                 imageFile: null,
                 imageUrl: '',
@@ -138,6 +175,12 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
         const newParams = [...formData.bodyParameters];
         newParams[index] = value;
         handleInputChange('bodyParameters', newParams);
+    };
+
+    const handleHeaderParamChange = (index: number, value: string) => {
+        const newParams = [...(formData.headerParameters || [])];
+        newParams[index] = value;
+        handleInputChange('headerParameters', newParams);
     };
 
     const handleSubmit = async (isDraft = false) => {
@@ -156,9 +199,17 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
             toast.error('Header image is required');
             return;
         }
-        if (hInfo.headerType === 'TEXT' && hInfo.headerParams > 0 && !formData.headerValue.trim()) {
-            toast.error('Header text is required');
-            return;
+        // Check for dynamic header (from text or example object)
+        const headerComp = selectedTemplate.components.find(c => c.type === 'HEADER');
+        const headerVars = headerComp?.format === 'TEXT' && headerComp.text ? extractVariables(headerComp.text) : [];
+        const headerExampleParams = getHeaderParamsFromExample(headerComp);
+        const isDynamicHeader = hInfo.headerType === 'TEXT' && (hInfo.headerParams > 0 || headerVars.length > 0 || headerExampleParams.length > 0);
+
+        if (isDynamicHeader) {
+            if (formData?.headerParameters?.length === 0 || formData?.headerParameters?.some(p => !p.trim())) {
+                toast.error('All header parameters are required');
+                return;
+            }
         }
         if (hInfo.headerType === 'VIDEO' && !formData.headerValue.trim()) {
             toast.error('Video URL is required');
@@ -207,17 +258,43 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
             const buildSendPayload = () => {
                 const components: any[] = [];
                 const currentHInfo = selectedTemplate.parameterInfo;
+
+                // Check for header params from text or example object
+                const headerComp = selectedTemplate.components.find(c => c.type === 'HEADER');
+                const headerTextVars = headerComp?.format === 'TEXT' && headerComp.text ? extractVariables(headerComp.text) : [];
+                const headerExampleParams = getHeaderParamsFromExample(headerComp);
+                const hasTextHeaderParams = currentHInfo.headerType === 'TEXT' &&
+                    (currentHInfo.headerParams > 0 || headerTextVars.length > 0 || headerExampleParams.length > 0);
+
                 if (
                     currentHInfo.headerType === 'IMAGE' ||
                     currentHInfo.headerType === 'VIDEO' ||
                     currentHInfo.headerType === 'DOCUMENT' ||
-                    (currentHInfo.headerType === 'TEXT' && currentHInfo.headerParams > 0)
+                    hasTextHeaderParams
                 ) {
                     const headerParams: any[] = [];
                     if (currentHInfo.headerType === 'IMAGE') {
                         headerParams.push({ type: 'image', image: { link: finalImageUrl } });
                     } else if (currentHInfo.headerType === 'TEXT') {
-                        headerParams.push({ type: 'text', text: formData.headerValue });
+                        // Use already extracted header variables
+                        const allHeaderVars = headerTextVars.length > 0 ? headerTextVars : headerExampleParams;
+
+                        // Use headerParameters array for dynamic text headers
+                        if (formData.headerParameters && formData.headerParameters.length > 0) {
+                            formData.headerParameters.forEach((text, i) => {
+                                const param: any = { type: 'text', text };
+                                if (allHeaderVars[i]) {
+                                    param.parameter_name = allHeaderVars[i];
+                                }
+                                headerParams.push(param);
+                            });
+                        } else if (formData.headerValue) {
+                            const param: any = { type: 'text', text: formData.headerValue };
+                            if (allHeaderVars.length > 0) {
+                                param.parameter_name = allHeaderVars[0];
+                            }
+                            headerParams.push(param);
+                        }
                     } else if (currentHInfo.headerType === 'VIDEO' || currentHInfo.headerType === 'DOCUMENT') {
                         const type = currentHInfo.headerType.toLowerCase();
                         headerParams.push({ type, [type]: { link: formData.headerValue } });
@@ -225,16 +302,18 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
                     components.push({ type: 'header', parameters: headerParams });
                 }
                 if (formData.bodyParameters.length > 0) {
-                    // Extract variable names from text to see if we need parameter_name
-                    const bodyText = selectedTemplate.components.find(c => c.type === 'BODY')?.text || '';
-                    const variableNames = extractVariables(bodyText);
+                    // Extract variable names from text or example to see if we need parameter_name
+                    const bodyComp = selectedTemplate.components.find(c => c.type === 'BODY');
+                    const bodyText = bodyComp?.text || '';
+                    const textVariables = extractVariables(bodyText);
+                    const exampleParams = getBodyParamsFromExample(bodyComp);
+                    const variableNames = textVariables.length > 0 ? textVariables : exampleParams;
 
                     components.push({
                         type: 'body',
                         parameters: formData.bodyParameters.map((text, i) => {
                             const param: any = { type: 'text', text };
                             // If we have a named variable at this index, include parameter_name
-                            // Note: extractVariables returns names in order of appearance
                             if (variableNames[i]) {
                                 param.parameter_name = variableNames[i];
                             }
@@ -262,7 +341,8 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
                     image_url: finalImageUrl,
                     template_variables: {
                         body_params: formData.bodyParameters,
-                        header_param: formData.headerValue || undefined, // Mapping header text/link to header_param
+                        header_params: formData?.headerParameters?.length > 0 ? formData.headerParameters : undefined,
+                        header_param: formData.headerValue || (formData?.headerParameters?.length > 0 ? formData.headerParameters[0] : undefined), // Fallback/Compat
                     },
                     target_type: audienceSelection.type === 'all' ? 'all' : 'custom',
                     target_user_ids: audienceSelection.type === 'specific' ? audienceSelection.includedIds : [],
@@ -396,35 +476,66 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
                         {selectedTemplate && (
                             <div className="space-y-6 pt-4 border-t">
                                 {/* Header Parameter Input (Only if dynamic or media) */}
-                                {(selectedTemplate.parameterInfo.headerType === 'IMAGE' ||
-                                    selectedTemplate.parameterInfo.headerType === 'VIDEO' ||
-                                    selectedTemplate.parameterInfo.headerType === 'DOCUMENT' ||
-                                    (selectedTemplate.parameterInfo.headerType === 'TEXT' &&
-                                        selectedTemplate.parameterInfo.headerParams > 0)) && (
+                                {(() => {
+                                    const hInfo = selectedTemplate.parameterInfo;
+                                    const headerComp = selectedTemplate.components.find(c => c.type === 'HEADER');
+                                    const headerVars = headerComp?.format === 'TEXT' && headerComp.text
+                                        ? extractVariables(headerComp.text)
+                                        : [];
+                                    const headerExampleParams = getHeaderParamsFromExample(headerComp);
+                                    const allHeaderVars = headerVars.length > 0 ? headerVars : headerExampleParams;
+                                    const isDynamicText = hInfo.headerType === 'TEXT' && (hInfo.headerParams > 0 || allHeaderVars.length > 0);
+                                    const isMedia = hInfo.headerType === 'IMAGE' || hInfo.headerType === 'VIDEO' || hInfo.headerType === 'DOCUMENT';
+
+                                    if (!isMedia && !isDynamicText) return null;
+
+                                    return (
                                         <div className="space-y-3">
-                                            <Label>Header Content ({selectedTemplate.parameterInfo.headerType})</Label>
-                                            {selectedTemplate.parameterInfo.headerType === 'IMAGE' && (
+                                            <Label>
+                                                Header Content ({hInfo.headerType})
+                                                {allHeaderVars.length > 0 && <span className="text-xs font-normal text-muted-foreground ml-2">Variable: {allHeaderVars[0]}</span>}
+                                            </Label>
+
+                                            {hInfo.headerType === 'IMAGE' && (
                                                 <ImageUpload
                                                     value={formData.imageUrl}
                                                     onChange={(file) => handleInputChange('imageFile', file)}
                                                     disabled={isLoading}
                                                 />
                                             )}
-                                            {(selectedTemplate.parameterInfo.headerType === 'TEXT' ||
-                                                selectedTemplate.parameterInfo.headerType === 'VIDEO' ||
-                                                selectedTemplate.parameterInfo.headerType === 'DOCUMENT') && (
-                                                    <Input
-                                                        placeholder={
-                                                            selectedTemplate.parameterInfo.headerType === 'TEXT'
-                                                                ? 'Header text...'
-                                                                : 'Link URL...'
-                                                        }
-                                                        value={formData.headerValue}
-                                                        onChange={(e) => handleInputChange('headerValue', e.target.value)}
-                                                    />
-                                                )}
+
+                                            {(isDynamicText || hInfo.headerType === 'VIDEO' || hInfo.headerType === 'DOCUMENT') && (
+                                                <div className="space-y-3">
+                                                    {isDynamicText ? (
+                                                        <div className="grid gap-3">
+                                                            {formData?.headerParameters?.map((param, i) => {
+                                                                const varName = allHeaderVars[i] || `{{${i + 1}}}`;
+                                                                return (
+                                                                    <div key={i} className="flex items-center gap-3">
+                                                                        <div className="w-auto min-w-[32px] px-2 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                                                                            {`{{${varName}}}`}
+                                                                        </div>
+                                                                        <Input
+                                                                            placeholder={`Value for {{${varName}}}`}
+                                                                            value={param}
+                                                                            onChange={(e) => handleHeaderParamChange(i, e.target.value)}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <Input
+                                                            placeholder="Link URL..."
+                                                            value={formData.headerValue}
+                                                            onChange={(e) => handleInputChange('headerValue', e.target.value)}
+                                                        />
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+                                    );
+                                })()}
 
                                 {/* Body Parameters */}
                                 {(selectedTemplate.parameterInfo.bodyParams > 0 || formData.bodyParameters.length > 0) && (
@@ -443,9 +554,12 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
                                         </Alert>
                                         <div className="grid gap-3">
                                             {formData.bodyParameters.map((param, i) => {
-                                                const bodyText = selectedTemplate.components.find(c => c.type === 'BODY')?.text || '';
-                                                const matches = bodyText.match(/{{([^}]+)}}/g);
-                                                const varName = matches && matches[i] ? matches[i] : `{{${i + 1}}}`;
+                                                const bodyComp = selectedTemplate.components.find(c => c.type === 'BODY');
+                                                const bodyText = bodyComp?.text || '';
+                                                const textVars = extractVariables(bodyText);
+                                                const exampleParams = getBodyParamsFromExample(bodyComp);
+                                                const allBodyVars = textVars.length > 0 ? textVars : exampleParams;
+                                                const varName = allBodyVars[i] ? `{{${allBodyVars[i]}}}` : `{{${i + 1}}}`;
 
                                                 return (
                                                     <div key={i} className="flex items-center gap-3">
@@ -466,7 +580,13 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
 
                                 {/* Information about static components */}
                                 {selectedTemplate.parameterInfo.headerType === 'TEXT' &&
-                                    selectedTemplate.parameterInfo.headerParams === 0 && (
+                                    selectedTemplate.parameterInfo.headerParams === 0 &&
+                                    (() => {
+                                        const headerComp = selectedTemplate.components.find(c => c.type === 'HEADER');
+                                        const headerVars = headerComp?.format === 'TEXT' && headerComp.text ? extractVariables(headerComp.text) : [];
+                                        const headerExampleParams = getHeaderParamsFromExample(headerComp);
+                                        return headerVars.length === 0 && headerExampleParams.length === 0;
+                                    })() && (
                                         <p className="text-xs text-muted-foreground italic">
                                             Note: This template uses a static text header.
                                         </p>
@@ -487,7 +607,10 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
                         <CardTitle className="text-lg">3. Target Audience & Scheduling</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <CustomerSelector onSelectionChange={setAudienceSelection} />
+                        <CustomerSelector
+                            initialSelection={audienceSelection}
+                            onSelectionChange={setAudienceSelection}
+                        />
 
                         <div className="pt-6 border-t space-y-4">
                             <div className="flex items-center justify-between">
@@ -545,6 +668,7 @@ export const CampaignForm = ({ initialData, onSuccess, isEditMode = false }: Cam
                     <MessagePreview
                         image={formData.imageFile || formData.imageUrl}
                         headerValue={formData.headerValue}
+                        headerParameters={formData.headerParameters}
                         bodyParameters={formData.bodyParameters}
                         template={selectedTemplate}
                     />

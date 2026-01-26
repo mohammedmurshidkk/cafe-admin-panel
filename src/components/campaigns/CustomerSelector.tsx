@@ -11,6 +11,11 @@ import { useGetCustomersQuery } from '@/store/api/customersApi';
 import { cn } from '@/lib/utils';
 
 interface CustomerSelectorProps {
+    initialSelection?: {
+        type: 'all' | 'specific';
+        includedIds: string[];
+        excludedIds: string[];
+    };
     onSelectionChange: (selection: {
         type: 'all' | 'specific';
         includedIds: string[];
@@ -18,14 +23,14 @@ interface CustomerSelectorProps {
     }) => void;
 }
 
-export const CustomerSelector = ({ onSelectionChange }: CustomerSelectorProps) => {
+export const CustomerSelector = ({ initialSelection, onSelectionChange }: CustomerSelectorProps) => {
     const [search, setSearch] = useState('');
     // const debouncedSearch = useDebounse(search, 500);
 
     // Selection State
-    const [selectAll, setSelectAll] = useState(false);
-    const [includedIds, setIncludedIds] = useState<Set<string>>(new Set());
-    const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
+    const [selectAll, setSelectAll] = useState(initialSelection?.type === 'all' || false);
+    const [includedIds, setIncludedIds] = useState<Set<string>>(new Set(initialSelection?.includedIds || []));
+    const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set(initialSelection?.excludedIds || []));
 
     // Pagination for infinite scroll - MVP just fetching first page or search results
     const { data, isLoading } = useGetCustomersQuery({

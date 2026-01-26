@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { MenuImportModal } from '@/components/menu/MenuImportModal';
 import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload, Search, RefreshCw, FileText, ExternalLink, Settings, Star } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -115,6 +116,7 @@ const Menu = () => {
   const [pdfConfigFormData, setPdfConfigFormData] = useState<{ name: string; name_local: string; categoryIds: string[] }>({ name: '', name_local: '', categoryIds: [] });
   const [syncingConfigId, setSyncingConfigId] = useState<string | null>(null);
   const [isFeaturedModalOpen, setIsFeaturedModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // PDF Config Handlers
   const openPdfConfigModal = (config?: MenuPdfConfig) => {
@@ -358,6 +360,10 @@ const Menu = () => {
             <Button variant="outline" onClick={() => setIsFeaturedModalOpen(true)}>
               <Star className="h-4 w-4 mr-2" />
               Featured
+            </Button>
+            <Button variant="outline" onClick={() => setIsImportModalOpen(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Import CSV
             </Button>
             <Button variant="outline" onClick={() => setIsPdfConfigsModalOpen(true)}>
               <FileText className="h-4 w-4 mr-2" />
@@ -897,6 +903,10 @@ const Menu = () => {
       <FeaturedItemsModal
         open={isFeaturedModalOpen}
         onOpenChange={setIsFeaturedModalOpen}
+      />
+      <MenuImportModal
+        open={isImportModalOpen}
+        onOpenChange={setIsImportModalOpen}
       />
     </div>
   );

@@ -135,7 +135,9 @@ export const CampaignDetailModal = ({ campaign, isOpen, onClose }: CampaignDetai
                         ) : (
                             <MessagePreview
                                 image={campaign.image_url}
-                                bodyParameters={campaign.body_parameters || []}
+                                headerValue={campaign.template_variables?.header_param}
+                                headerParameters={campaign.template_variables?.header_params || (campaign.template_variables?.header_param ? [campaign.template_variables.header_param] : [])}
+                                bodyParameters={campaign.body_parameters || campaign.template_variables?.body_params || []}
                                 template={selectedTemplate}
                                 headerText={campaign.template_name} // Fallback
                             />

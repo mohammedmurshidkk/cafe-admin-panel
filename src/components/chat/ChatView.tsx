@@ -494,48 +494,58 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
       {pendingIntervention && !quoteDismissed && (
         <div className="flex-shrink-0 border-t border-border">
           <div className="bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10 border-b border-purple-200/50 dark:border-purple-800/50">
-            {/* TIME CONFIRMATION CARD (for time and urgent delivery) */}
-            {(pendingIntervention.type === 'custom_cake_time_confirmation' || pendingIntervention.type === 'urgent_delivery') ? (
-              <>
-                <TimeConfirmationCard
-                  intervention={pendingIntervention}
-                  isExpanded={quoteExpanded}
-                  onExpandToggle={setQuoteExpanded}
-                  onResolve={(approved, message) => handleResolve(approved, undefined, message)}
-                  isResolving={isResolving}
-                />
-                <LocationConfirmationCard
-                  intervention={pendingIntervention}
-                  isExpanded={quoteExpanded}
-                  onExpandToggle={setQuoteExpanded}
-                  onResolve={(approved, message, customDeliveryFee) => handleResolve(approved, undefined, message, customDeliveryFee)}
-                  isResolving={isResolving}
-                />
-              </>
-            ) : pendingIntervention.type === 'other' ? (
-              <GenericInterventionCard
-                intervention={pendingIntervention}
-                isExpanded={quoteExpanded}
-                onExpandToggle={setQuoteExpanded}
-                onResolve={(approved, message) => handleResolve(approved, undefined, message)}
-                isResolving={isResolving}
-              />
-            ) : (
-              /* CUSTOM CAKE INTERVENTION */
-              <CustomCakeRequestCard
-                intervention={pendingIntervention}
-                isExpanded={quoteExpanded}
-                onExpandToggle={setQuoteExpanded}
-                onClaim={handleClaim}
-                onResolve={(approved, price, message) => handleResolve(approved, price, message)}
-                onCancel={handleCancel}
-                onImageClick={setLightboxImage}
-                isClaiming={isClaiming}
-                isResolving={isResolving}
-                isCancelling={isCancelling}
-                formatWeight={formatWeight}
-              />
-            )}
+            {(() => {
+              switch (pendingIntervention.type) {
+                case 'out_of_radius':
+                  return (
+                    <LocationConfirmationCard
+                      intervention={pendingIntervention}
+                      isExpanded={quoteExpanded}
+                      onExpandToggle={setQuoteExpanded}
+                      onResolve={(approved, message, customDeliveryFee) => handleResolve(approved, undefined, message, customDeliveryFee)}
+                      isResolving={isResolving}
+                    />
+                  );
+                case 'custom_cake_time_confirmation':
+                case 'urgent_delivery':
+                  return (
+                    <TimeConfirmationCard
+                      intervention={pendingIntervention}
+                      isExpanded={quoteExpanded}
+                      onExpandToggle={setQuoteExpanded}
+                      onResolve={(approved, message) => handleResolve(approved, undefined, message)}
+                      isResolving={isResolving}
+                    />
+                  );
+                case 'custom_cake':
+                  return (
+                    <CustomCakeRequestCard
+                      intervention={pendingIntervention}
+                      isExpanded={quoteExpanded}
+                      onExpandToggle={setQuoteExpanded}
+                      onClaim={handleClaim}
+                      onResolve={(approved, price, message) => handleResolve(approved, price, message)}
+                      onCancel={handleCancel}
+                      onImageClick={setLightboxImage}
+                      isClaiming={isClaiming}
+                      isResolving={isResolving}
+                      isCancelling={isCancelling}
+                      formatWeight={formatWeight}
+                    />
+                  );
+                default:
+                  // Default to Generic/Other
+                  return (
+                    <GenericInterventionCard
+                      intervention={pendingIntervention}
+                      isExpanded={quoteExpanded}
+                      onExpandToggle={setQuoteExpanded}
+                      onResolve={(approved, message) => handleResolve(approved, undefined, message)}
+                      isResolving={isResolving}
+                    />
+                  );
+              }
+            })()}
           </div>
         </div>
       )}
