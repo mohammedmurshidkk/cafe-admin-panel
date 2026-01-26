@@ -78,8 +78,6 @@ export const CostManagement = () => {
         { name: 'Maps', value: data.breakdown.googleMaps.totalCost, color: '#ffc658' },
     ].filter(d => d.value > 0);
 
-    console.log('####', data, pieData);
-
     return (
         <div className="p-6 space-y-6 bg-background min-h-screen">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

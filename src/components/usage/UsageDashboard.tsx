@@ -104,8 +104,6 @@ export const UsageDashboard = () => {
         cost: dashboardData?.realTime.estimatedCostUsd || 0
     };
 
-    console.log('#### dashboardData', dashboardData);
-
     return (
         <div className="p-6 space-y-6 bg-background min-h-screen">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

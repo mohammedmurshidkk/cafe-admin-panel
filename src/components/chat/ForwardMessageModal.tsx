@@ -54,8 +54,6 @@ export const ForwardMessageModal = ({
     );
   };
 
-  console.log('####### messages', messages)
-
   const handleForward = async () => {
     if (selectedSessions.length === 0 || messages.length === 0) return;
 

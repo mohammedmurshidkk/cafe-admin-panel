@@ -16,7 +16,7 @@ interface FormModalProps {
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
   onClose?: () => void;
-  title: string;
+  title: string | ReactNode;
   description?: string;
   children: ReactNode;
   onSubmit?: () => void | Promise<void>;

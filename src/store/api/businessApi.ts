@@ -16,11 +16,11 @@ interface UpdateBusinessData {
   free_delivery_above?: number;
   delivery_radius_km?: number;
   minimum_wait_minutes?: number;
-  free_radius_meters?:number
-  minimum_delivery_charge?:number
-  minimum_charge_distance_meters?:number
-  increment_per_km?:number
-  max_delivery_radius_meters?:number
+  free_radius_meters?: number
+  minimum_delivery_charge?: number
+  minimum_charge_distance_meters?: number
+  increment_per_km?: number
+  max_delivery_radius_meters?: number
 }
 
 interface OutletData {
@@ -28,6 +28,7 @@ interface OutletData {
   address: string;
   phone: string;
   is_active?: boolean;
+  printer_ip?: string | null;
 }
 
 export const businessApi = apiSlice.injectEndpoints({
@@ -78,11 +79,11 @@ export const businessApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { 
-  useGetBusinessProfileQuery, 
-  useUpdateBusinessProfileMutation, 
+export const {
+  useGetBusinessProfileQuery,
+  useUpdateBusinessProfileMutation,
   useUploadBusinessLogoMutation,
-  useCreateOutletMutation, 
-  useUpdateOutletMutation, 
-  useDeleteOutletMutation 
+  useCreateOutletMutation,
+  useUpdateOutletMutation,
+  useDeleteOutletMutation
 } = businessApi;

@@ -21,7 +21,8 @@ import {
   GripVertical,
   Clock,
   FileSpreadsheet,
-  Download
+  Download,
+  Printer
 } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -130,7 +131,8 @@ const CompanyProfile = () => {
     closing_time: '',
     opening_buffer_minutes: 0,
     closing_buffer_minutes: 0,
-    opening_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as string[]
+    opening_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as string[],
+    printer_ip: ''
   });
 
   // Cake pricing data from API
@@ -241,6 +243,7 @@ const CompanyProfile = () => {
         opening_buffer_minutes: outlet.opening_buffer_minutes || 0,
         closing_buffer_minutes: outlet.closing_buffer_minutes || 0,
         opening_days: outlet.opening_days || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+        printer_ip: outlet.printer_ip || '',
       });
     } else {
       setEditingOutlet(null);
@@ -253,7 +256,8 @@ const CompanyProfile = () => {
         closing_time: '',
         opening_buffer_minutes: 0,
         closing_buffer_minutes: 0,
-        opening_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        opening_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+        printer_ip: ''
       });
     }
     setIsOutletFormOpen(true);
@@ -526,8 +530,6 @@ const CompanyProfile = () => {
     if (grams >= 1000) return `${grams / 1000}kg`;
     return `${grams}g`;
   };
-
-  console.log('## flavorPricing', flavorPricing)
 
   const predefinedDesignElements = [
     { key: 'extra_tier', label: 'Extra Tier' },
@@ -844,8 +846,13 @@ const CompanyProfile = () => {
                     )}
                     {outlet.opening_days && outlet.opening_days.length < 7 && (
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {outlet.opening_days.map(d => d.charAt(0).toUpperCase() + d.slice(1, 3)).join(', ')}
                       </p>
+                    )}
+                    {outlet.printer_ip && (
+                      <div className="flex items-center gap-1 text-sm text-primary mt-1">
+                        <Printer className="h-3.5 w-3.5" />
+                        <span>Printer Configured ({outlet.printer_ip})</span>
+                      </div>
                     )}
                   </div>
                 </div>

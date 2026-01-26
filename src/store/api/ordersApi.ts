@@ -1,11 +1,49 @@
 import { apiSlice } from './apiSlice';
-import { Order, OrdersResponse, OrderStatus, SuccessResponse } from '@/types';
+import { Order, OrdersResponse, OrderStatus, SuccessResponse, FulfillmentType } from '@/types';
 
 interface OrdersQueryParams {
   status?: OrderStatus | '';
   search?: string;
   page?: number;
   limit?: number;
+}
+
+// Manual order types
+export interface ManualOrderItem {
+  name: string;
+  quantity: number;
+  size_or_weight?: string;
+  unit_price: number;
+  notes?: string;
+}
+
+export interface ManualOrderPrefillResponse {
+  success: boolean;
+  data: {
+    customerPhone: string;
+    items: ManualOrderItem[];
+    fulfillmentType?: FulfillmentType;
+    deliveryAddress?: string;
+    deliveryLatitude?: number;
+    deliveryLongitude?: number;
+    deliveryTime?: string;
+    pickupTime?: string;
+    pickupOutletId?: string;
+  };
+}
+
+export interface CreateManualOrderRequest {
+  sessionId?: string;
+  customerPhone: string;
+  items: ManualOrderItem[];
+  fulfillmentType: FulfillmentType;
+  deliveryAddress?: string;
+  deliveryLatitude?: number;
+  deliveryLongitude?: number;
+  deliveryFee?: number;
+  deliveryTime?: string;
+  pickupOutletId?: string;
+  pickupTime?: string;
 }
 
 export const ordersApi = apiSlice.injectEndpoints({
@@ -38,7 +76,24 @@ export const ordersApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Orders', 'Dashboard'],
     }),
+    getOrderPrefill: builder.query<ManualOrderPrefillResponse, string>({
+      query: (sessionId) => `/orders/prefill/${sessionId}`,
+    }),
+    createManualOrder: builder.mutation<{ success: boolean; order: Order }, CreateManualOrderRequest>({
+      query: (body) => ({
+        url: '/orders/manual',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Orders', 'Dashboard'],
+    }),
   }),
 });
 
-export const { useGetOrdersQuery, useGetRecentOrdersQuery, useUpdateOrderStatusMutation } = ordersApi;
+export const {
+  useGetOrdersQuery,
+  useGetRecentOrdersQuery,
+  useUpdateOrderStatusMutation,
+  useLazyGetOrderPrefillQuery,
+  useCreateManualOrderMutation,
+} = ordersApi;

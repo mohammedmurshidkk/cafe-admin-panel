@@ -15,7 +15,13 @@ import { useInterventionSocket } from '@/hooks/useInterventionSocket';
 import { AiPauseToggle } from './AiPauseToggle';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Phone, X, Forward, History, Eye } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ArrowLeft, Phone, X, Forward, History, Eye, MoreVertical, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatPhone } from '@/utils/formatters';
 import { toast } from 'sonner';
@@ -24,6 +30,7 @@ import { CustomCakeRequestCard } from './interventions/CustomCakeRequestCard';
 import { LocationConfirmationCard } from './interventions/LocationConfirmationCard';
 import { GenericInterventionCard } from './interventions/GenericInterventionCard';
 import { InterventionHistorySheet } from './InterventionHistorySheet';
+import { ManualOrderModal } from '@/components/orders/ManualOrderModal';
 
 interface ChatViewProps {
   sessionId: string;
@@ -48,6 +55,7 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
   const chatInputRef = useRef<ChatInputHandle>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [manualOrderOpen, setManualOrderOpen] = useState(false);
 
   // Message selection state for forwarding
   const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -396,6 +404,19 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
 
         {session && (
           <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" title="Chat Actions">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setManualOrderOpen(true)}>
+                  <ClipboardList className="h-4 w-4 mr-2" />
+                  Complete Order
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="outline"
               size="icon"
@@ -589,6 +610,13 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
         open={historyOpen}
         onOpenChange={setHistoryOpen}
         sessionId={sessionId}
+      />
+
+      <ManualOrderModal
+        open={manualOrderOpen}
+        onClose={() => setManualOrderOpen(false)}
+        sessionId={sessionId}
+        customerPhone={customer?.phone}
       />
     </div>
   );

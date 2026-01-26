@@ -265,6 +265,7 @@ export interface Outlet {
   opening_buffer_minutes?: number;
   closing_buffer_minutes?: number;
   opening_days?: string[];
+  printer_ip?: string | null;
 }
 
 export interface Business {
@@ -508,4 +509,49 @@ export interface AiPauseResponse {
     ai_paused: boolean;
     paused_at: string | null;
   };
+}
+
+// Print types
+export interface PrintDataItem {
+  name: string;
+  quantity: number;
+  size_or_weight?: string;
+  unit_price: number;
+  custom_text?: string;
+  delivery_date?: string;
+  notes?: string;
+  addons?: { name: string; price: number }[];
+}
+
+export interface PrintData {
+  order_number: string;
+  order_date: string;
+  order_time: string;
+  business_name: string;
+  customer_name: string;
+  customer_phone: string;
+  items: PrintDataItem[];
+  subtotal: number;
+  delivery_fee: number;
+  grand_total: number;
+  fulfillment_type: 'delivery' | 'takeaway';
+  delivery_address?: string;
+  delivery_latitude?: number;
+  delivery_longitude?: number;
+  delivery_time?: string;
+  outlet_name?: string;
+  outlet_address?: string;
+  pickup_time?: string;
+  sp_note?: string;
+}
+
+export interface PrintOutlet {
+  id: string;
+  outlet_name: string;
+  printer_ip: string;
+}
+
+export interface GetPrintDataResponse {
+  printData: PrintData;
+  outlets: PrintOutlet[];
 }

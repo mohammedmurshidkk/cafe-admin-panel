@@ -4,12 +4,13 @@ import { FormModal } from '@/components/ui/FormModal';
 import { Order, OrderStatus } from '@/types';
 import { formatCurrency, formatDateTime, formatPhone } from '@/utils/formatters';
 import { useReverseGeocode } from '@/hooks/useReverseGeocode';
-import { MapPin, Clock, Truck, Store, Loader2 } from 'lucide-react';
+import { MapPin, Clock, Truck, Store, Loader2, Printer } from 'lucide-react';
 
 interface OrderDetailModalProps {
   order: Order | null;
   onClose: () => void;
   onStatusChange?: (orderId: string, status: OrderStatus) => Promise<void>;
+  onPrint?: (orderId: string) => void;
   isUpdating?: boolean;
 }
 
@@ -17,6 +18,7 @@ export const OrderDetailModal = ({
   order,
   onClose,
   onStatusChange,
+  onPrint,
   isUpdating = false
 }: OrderDetailModalProps) => {
   // Reverse geocode if delivery_address is null but coordinates exist
@@ -34,7 +36,22 @@ export const OrderDetailModal = ({
     <FormModal
       open={!!order}
       onOpenChange={onClose}
-      title={`Order #${order?.order_number}`}
+      title={
+        <div className="flex items-center justify-between w-full pr-8">
+          <span>Order #{order?.order_number}</span>
+          {onPrint && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2"
+              onClick={() => onPrint(order.id)}
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Print KOT
+            </Button>
+          )}
+        </div>
+      }
       description={formatPhone(order.customer_phone)}
     >
       <div className="space-y-5">

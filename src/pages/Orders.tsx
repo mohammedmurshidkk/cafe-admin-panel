@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Filter, Truck, Store, RefreshCw, Loader2, UserPlus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, Truck, Store, RefreshCw, Loader2, UserPlus, ChevronLeft, ChevronRight, Plus, Printer } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { DataTable } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { OrderDetailModal } from '@/components/orders/OrderDetailModal';
 import { AssignDeliveryModal } from '@/components/orders/AssignDeliveryModal';
+import { ManualOrderModal } from '@/components/orders/ManualOrderModal';
+import { PrintModal } from '@/components/orders/PrintModal';
 import {
   Select,
   SelectContent,
@@ -62,6 +64,9 @@ const Orders = () => {
   const itemsPerPage = 20;
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [assignOrder, setAssignOrder] = useState<Order | null>(null);
+  const [manualOrderOpen, setManualOrderOpen] = useState(false);
+  const [printOrderId, setPrintOrderId] = useState<string | null>(null);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const handleRowClick = (item: Order) => {
     setSelectedOrder(item);
@@ -157,20 +162,35 @@ const Orders = () => {
       key: 'actions',
       header: 'Actions',
       render: (order: Order) => (
-        order.fulfillment_type === 'delivery' ? (
+        <div className="flex items-center gap-2">
+          {order.fulfillment_type === 'delivery' && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setAssignOrder(order);
+              }}
+              className="gap-1"
+            >
+              <UserPlus className="h-3 w-3" />
+              Assign
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              setAssignOrder(order);
+              setPrintOrderId(order.id);
+              setIsPrintModalOpen(true);
             }}
-            className="gap-1"
+            className="gap-1 border-primary/30 text-primary hover:bg-primary/5"
           >
-            <UserPlus className="h-3 w-3" />
-            Assign
+            <Printer className="h-3 w-3" />
+            Print
           </Button>
-        ) : null
+        </div>
       ),
     },
   ];
@@ -180,6 +200,12 @@ const Orders = () => {
       <PageHeader
         title="Orders"
         description="Manage and track all customer orders"
+        action={
+          <Button onClick={() => setManualOrderOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Order
+          </Button>
+        }
       />
 
       {/* Filters */}
@@ -262,6 +288,10 @@ const Orders = () => {
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
         onStatusChange={handleStatusChange}
+        onPrint={(id) => {
+          setPrintOrderId(id);
+          setIsPrintModalOpen(true);
+        }}
         isUpdating={isUpdating}
       />
 
@@ -269,6 +299,18 @@ const Orders = () => {
       <AssignDeliveryModal
         order={assignOrder}
         onClose={() => setAssignOrder(null)}
+      />
+
+      {/* Manual Order Modal */}
+      <ManualOrderModal
+        open={manualOrderOpen}
+        onClose={() => setManualOrderOpen(false)}
+      />
+
+      <PrintModal
+        orderId={printOrderId}
+        open={isPrintModalOpen}
+        onOpenChange={setIsPrintModalOpen}
       />
     </div>
   );
