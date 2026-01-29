@@ -14,7 +14,10 @@ import {
   ChevronRight,
   Sparkles,
   Truck,
-  Megaphone
+  Megaphone,
+  BarChart3,
+  Users,
+  Bot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -32,6 +35,9 @@ const navItems = [
   { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck },
   { path: '/company', label: 'Company Profile', icon: Building2 },
   { path: '/campaigns', label: 'Campaigns', icon: Megaphone },
+  { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+  { path: '/customers', label: 'Customers', icon: Users },
+  { path: '/settings/ai', label: 'AI Settings', icon: Bot },
 ];
 
 export const Sidebar = () => {

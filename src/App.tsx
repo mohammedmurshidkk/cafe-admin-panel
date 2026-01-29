@@ -26,6 +26,9 @@ import { BusinessUsageDetail } from './components/usage/BusinessUsageDetail';
 import { CostManagement } from './components/usage/CostManagement';
 import NotFound from "./pages/NotFound";
 import Campaigns from "./pages/Campaigns";
+import Analytics from "./pages/Analytics";
+import Customers from "./pages/Customers";
+import AiSettings from "./pages/AiSettings";
 
 const App = () => (
   <Provider store={store}>
@@ -58,6 +61,9 @@ const App = () => (
             <Route path="/interventions" element={<InterventionsPage />} />
             <Route path="/chat/:sessionId?" element={<AdminChat />} />
             <Route path="/campaigns" element={<Campaigns />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/customers" element={<Customers />} />
+            <Route path="/settings/ai" element={<AiSettings />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />

@@ -913,7 +913,7 @@ const CompanyProfile = () => {
       */}
 
       {/* Custom AI Prompt */}
-      <div className="card-warm p-6">
+      {/* <div className="card-warm p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
             <Brain className="h-5 w-5 text-secondary" />
@@ -938,7 +938,7 @@ const CompanyProfile = () => {
             </ul>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Critical Message */}
       <div className={cn(

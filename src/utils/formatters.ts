@@ -11,10 +11,11 @@ export const formatCurrency = (amount: number): string => {
 
 const createUtcDate = (dateString: string): Date => {
   if (!dateString) {
-    return new Date(NaN); // Return an invalid date for invalid input
+    return new Date(NaN);
   }
-  // If the date string doesn't end with 'Z', append it to ensure it's parsed as UTC.
-  const correctedDateString = dateString.endsWith('Z') ? dateString : `${dateString}Z`;
+  // Only append 'Z' if there's no timezone offset indicator already present
+  const hasTimezone = dateString.includes('Z') || /[+-]\d{2}:?\d{2}$/.test(dateString);
+  const correctedDateString = hasTimezone ? dateString : `${dateString}Z`;
   return new Date(correctedDateString);
 }
 
