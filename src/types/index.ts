@@ -555,3 +555,83 @@ export interface GetPrintDataResponse {
   printData: PrintData;
   outlets: PrintOutlet[];
 }
+
+// Feature Flags types
+export interface FeatureDefinition {
+  feature_key: string;
+  display_name: string;
+  description: string;
+  category: 'operations' | 'marketing' | 'ai' | 'analytics';
+  default_enabled: boolean;
+  sort_order: number;
+}
+
+export interface TenantFeature {
+  id: string;
+  business_id: string;
+  feature_key: string;
+  is_enabled: boolean;
+  enabled_at: string | null;
+  enabled_by: string | null;
+  disabled_at: string | null;
+  disabled_by: string | null;
+}
+
+export interface BusinessFeature {
+  feature_key: string;
+  display_name: string;
+  description: string;
+  category: string;
+  is_enabled: boolean;
+  default_enabled: boolean;
+}
+
+export interface FeatureUpdate {
+  feature_key: string;
+  is_enabled: boolean;
+}
+
+export interface FeatureDefinitionsResponse {
+  definitions: FeatureDefinition[];
+}
+
+export interface BusinessFeaturesResponse {
+  features: BusinessFeature[];
+}
+
+export interface TenantFeaturesResponse {
+  features: TenantFeature[];
+}
+
+// Data Clear types
+export interface DataSummary {
+  data_type: string;
+  display_name: string;
+  count: number;
+  table_name: string;
+}
+
+export interface DataType {
+  data_type: string;
+  display_name: string;
+  has_dependencies: boolean;
+}
+
+export interface DependencyCheck {
+  can_clear: boolean;
+  blocked_by: Array<{ table: string; display_name: string; count: number }>;
+}
+
+export interface DataClearResult {
+  success: boolean;
+  deleted_count: number;
+  errors?: string[];
+}
+
+export interface DataSummaryResponse {
+  summary: DataSummary[];
+}
+
+export interface DataTypesResponse {
+  dataTypes: DataType[];
+}

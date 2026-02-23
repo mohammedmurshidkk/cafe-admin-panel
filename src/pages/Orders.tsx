@@ -19,6 +19,7 @@ import {
 import { useGetOrdersQuery, useUpdateOrderStatusMutation } from '@/store/api/ordersApi';
 import { formatCurrency, formatDateTime, truncateId, formatPhone } from '@/utils/formatters';
 import { useReverseGeocode } from '@/hooks/useReverseGeocode';
+import { useFeatures } from '@/hooks/useFeatures';
 import { Order, OrderStatus } from '@/types';
 import { toast } from 'sonner';
 
@@ -67,6 +68,7 @@ const Orders = () => {
   const [manualOrderOpen, setManualOrderOpen] = useState(false);
   const [printOrderId, setPrintOrderId] = useState<string | null>(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const { isFeatureEnabled } = useFeatures();
 
   const handleRowClick = (item: Order) => {
     setSelectedOrder(item);
@@ -177,19 +179,21 @@ const Orders = () => {
               Assign
             </Button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setPrintOrderId(order.id);
-              setIsPrintModalOpen(true);
-            }}
-            className="gap-1 border-primary/30 text-primary hover:bg-primary/5"
-          >
-            <Printer className="h-3 w-3" />
-            Print
-          </Button>
+          {isFeatureEnabled('order_print') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPrintOrderId(order.id);
+                setIsPrintModalOpen(true);
+              }}
+              className="gap-1 border-primary/30 text-primary hover:bg-primary/5"
+            >
+              <Printer className="h-3 w-3" />
+              Print
+            </Button>
+          )}
         </div>
       ),
     },
@@ -288,10 +292,10 @@ const Orders = () => {
         order={selectedOrder}
         onClose={() => setSelectedOrder(null)}
         onStatusChange={handleStatusChange}
-        onPrint={(id) => {
+        onPrint={isFeatureEnabled('order_print') ? (id) => {
           setPrintOrderId(id);
           setIsPrintModalOpen(true);
-        }}
+        } : undefined}
         isUpdating={isUpdating}
       />
 

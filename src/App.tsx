@@ -21,6 +21,8 @@ import AdminChat from './pages/AdminChat';
 import SuperadminBusinesses from './pages/SuperadminBusinesses';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import SuperAdminAuditLogs from './pages/SuperAdminAuditLogs';
+import SuperAdminTenantFeatures from './pages/SuperAdminTenantFeatures';
+import SuperAdminDataClear from './pages/SuperAdminDataClear';
 import { UsageDashboard } from './components/usage/UsageDashboard';
 import { BusinessUsageDetail } from './components/usage/BusinessUsageDetail';
 import { CostManagement } from './components/usage/CostManagement';
@@ -29,6 +31,7 @@ import Campaigns from "./pages/Campaigns";
 import Analytics from "./pages/Analytics";
 import Customers from "./pages/Customers";
 import AiSettings from "./pages/AiSettings";
+import { FeatureGate } from "./components/FeatureGate";
 
 const App = () => (
   <Provider store={store}>
@@ -42,6 +45,8 @@ const App = () => (
             <Route path="dashboard" element={<SuperAdminDashboard />} />
             <Route path="businesses" element={<SuperadminBusinesses />} />
             <Route path="audit-logs" element={<SuperAdminAuditLogs />} />
+            <Route path="tenant-features" element={<SuperAdminTenantFeatures />} />
+            <Route path="data-clear" element={<SuperAdminDataClear />} />
             <Route path="usage" element={<UsageDashboard />} />
             <Route path="usage/business/:businessId" element={<BusinessUsageDetail />} />
             <Route path="usage/costs" element={<CostManagement />} />
@@ -53,17 +58,17 @@ const App = () => (
             <Route path="/sessions" element={<Sessions />} />
             <Route path="/menu" element={<Menu />} />
             <Route path="/categories" element={<Categories />} />
-            <Route path="/addons" element={<Addons />} />
+            <Route path="/addons" element={<FeatureGate feature="menu_addons"><Addons /></FeatureGate>} />
             <Route path="/company" element={<CompanyProfile />} />
-            <Route path="/amenities" element={<Amenities />} />
-            <Route path="/delivery-boys" element={<DeliveryBoys />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/interventions" element={<InterventionsPage />} />
+            <Route path="/amenities" element={<FeatureGate feature="amenities"><Amenities /></FeatureGate>} />
+            <Route path="/delivery-boys" element={<FeatureGate feature="delivery_management"><DeliveryBoys /></FeatureGate>} />
+            <Route path="/notifications" element={<FeatureGate feature="notifications"><Notifications /></FeatureGate>} />
+            <Route path="/interventions" element={<FeatureGate feature="interventions"><InterventionsPage /></FeatureGate>} />
             <Route path="/chat/:sessionId?" element={<AdminChat />} />
-            <Route path="/campaigns" element={<Campaigns />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/settings/ai" element={<AiSettings />} />
+            <Route path="/campaigns" element={<FeatureGate feature="campaigns"><Campaigns /></FeatureGate>} />
+            <Route path="/analytics" element={<FeatureGate feature="analytics"><Analytics /></FeatureGate>} />
+            <Route path="/customers" element={<FeatureGate feature="crm_customers"><Customers /></FeatureGate>} />
+            <Route path="/settings/ai" element={<FeatureGate feature="ai_settings"><AiSettings /></FeatureGate>} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />

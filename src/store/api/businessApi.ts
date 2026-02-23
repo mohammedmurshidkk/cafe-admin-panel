@@ -1,5 +1,5 @@
 import { apiSlice } from './apiSlice';
-import { Business, BusinessResponse, Outlet } from '@/types';
+import { Business, BusinessResponse, Outlet, TenantFeaturesResponse } from '@/types';
 
 interface UpdateBusinessData {
   name?: string;
@@ -76,6 +76,10 @@ export const businessApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Business'],
     }),
+    getMyFeatures: builder.query<TenantFeaturesResponse, void>({
+      query: () => '/business/features',
+      providesTags: ['Features'],
+    }),
   }),
 });
 
@@ -85,5 +89,6 @@ export const {
   useUploadBusinessLogoMutation,
   useCreateOutletMutation,
   useUpdateOutletMutation,
-  useDeleteOutletMutation
+  useDeleteOutletMutation,
+  useGetMyFeaturesQuery,
 } = businessApi;

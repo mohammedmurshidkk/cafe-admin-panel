@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -27,31 +28,46 @@ import {
   Bot
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useFeatures, FeatureKey } from '@/hooks/useFeatures';
 
-const mainNavItems = [
+interface NavItem {
+  path: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  feature?: FeatureKey;
+}
+
+const mainNavItems: NavItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/orders', label: 'Orders', icon: ClipboardList },
   { path: '/chat', label: 'Chat', icon: MessagesSquare },
   { path: '/menu', label: 'Menu', icon: UtensilsCrossed },
 ];
 
-const moreNavItems = [
+const moreNavItems: NavItem[] = [
   { path: '/sessions', label: 'Sessions', icon: MessageSquare },
   { path: '/categories', label: 'Categories', icon: FolderOpen },
-  { path: '/addons', label: 'Addons', icon: PlusCircle },
-  { path: '/amenities', label: 'Amenities', icon: Sparkles },
-  { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck },
+  { path: '/addons', label: 'Addons', icon: PlusCircle, feature: 'menu_addons' },
+  { path: '/amenities', label: 'Amenities', icon: Sparkles, feature: 'amenities' },
+  { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck, feature: 'delivery_management' },
   { path: '/company', label: 'Company Profile', icon: Building2 },
-  { path: '/campaigns', label: 'Campaigns', icon: Megaphone },
-  { path: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { path: '/customers', label: 'Customers', icon: Users },
-  { path: '/settings/ai', label: 'AI Settings', icon: Bot },
+  { path: '/campaigns', label: 'Campaigns', icon: Megaphone, feature: 'campaigns' },
+  { path: '/analytics', label: 'Analytics', icon: BarChart3, feature: 'analytics' },
+  { path: '/customers', label: 'Customers', icon: Users, feature: 'crm_customers' },
+  { path: '/settings/ai', label: 'AI Settings', icon: Bot, feature: 'ai_settings' },
 ];
 
 export const BottomNav = () => {
   const location = useLocation();
   const { logout } = useAuth();
-  const isMoreActive = moreNavItems.some(item => location.pathname === item.path);
+  const { isFeatureEnabled } = useFeatures();
+
+  // Filter more items based on enabled features
+  const visibleMoreItems = useMemo(() => {
+    return moreNavItems.filter(item => !item.feature || isFeatureEnabled(item.feature));
+  }, [isFeatureEnabled]);
+
+  const isMoreActive = visibleMoreItems.some(item => location.pathname === item.path);
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-elevated z-50">
@@ -105,7 +121,7 @@ export const BottomNav = () => {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 mb-2">
-            {moreNavItems.map((item) => {
+            {visibleMoreItems.map((item) => {
               const Icon = item.icon;
               return (
                 <DropdownMenuItem key={item.path} asChild>

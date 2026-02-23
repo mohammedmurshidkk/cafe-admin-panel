@@ -1,5 +1,21 @@
 import { apiSlice } from './apiSlice';
-import { SuperadminBusiness, BusinessesResponse, SuperadminBusinessFormData, CreateAdminData, SuccessResponse, AnalyticsOverviewResponse, BusinessStats, WebhookStatus } from '@/types';
+import {
+  SuperadminBusiness,
+  BusinessesResponse,
+  SuperadminBusinessFormData,
+  CreateAdminData,
+  SuccessResponse,
+  AnalyticsOverviewResponse,
+  BusinessStats,
+  WebhookStatus,
+  FeatureDefinitionsResponse,
+  BusinessFeaturesResponse,
+  FeatureUpdate,
+  DataTypesResponse,
+  DataSummaryResponse,
+  DependencyCheck,
+  DataClearResult,
+} from '@/types';
 
 export interface AuditLog {
   id: string;
@@ -124,6 +140,48 @@ export const superadminApi = apiSlice.injectEndpoints({
       },
       providesTags: ['AuditLogs'],
     }),
+
+    // Feature Management
+    getFeatureDefinitions: builder.query<FeatureDefinitionsResponse, void>({
+      query: () => '/superadmin/feature-definitions',
+      providesTags: ['FeatureDefinitions'],
+    }),
+    getBusinessFeatures: builder.query<BusinessFeaturesResponse, string>({
+      query: (businessId) => `/superadmin/businesses/${businessId}/features`,
+      providesTags: (_result, _error, businessId) => [{ type: 'BusinessFeatures', id: businessId }],
+    }),
+    updateBusinessFeatures: builder.mutation<SuccessResponse, { businessId: string; features: FeatureUpdate[] }>({
+      query: ({ businessId, features }) => ({
+        url: `/superadmin/businesses/${businessId}/features`,
+        method: 'PUT',
+        body: { features },
+      }),
+      invalidatesTags: (_result, _error, { businessId }) => [{ type: 'BusinessFeatures', id: businessId }],
+    }),
+
+    // Data Clear
+    getDataTypes: builder.query<DataTypesResponse, void>({
+      query: () => '/superadmin/data-types',
+    }),
+    getDataSummary: builder.query<DataSummaryResponse, string>({
+      query: (businessId) => `/superadmin/businesses/${businessId}/data-summary`,
+      providesTags: (_result, _error, businessId) => [{ type: 'DataSummary', id: businessId }],
+    }),
+    checkClearDependencies: builder.mutation<DependencyCheck, { businessId: string; dataType: string }>({
+      query: ({ businessId, dataType }) => ({
+        url: `/superadmin/businesses/${businessId}/data-clear/check`,
+        method: 'POST',
+        body: { dataType },
+      }),
+    }),
+    clearBusinessData: builder.mutation<DataClearResult, { businessId: string; dataType: string; confirm: boolean }>({
+      query: ({ businessId, dataType, confirm }) => ({
+        url: `/superadmin/businesses/${businessId}/data-clear`,
+        method: 'POST',
+        body: { dataType, confirm },
+      }),
+      invalidatesTags: (_result, _error, { businessId }) => [{ type: 'DataSummary', id: businessId }],
+    }),
   }),
 });
 
@@ -139,4 +197,13 @@ export const {
   useGetWebhookStatusQuery,
   useGetAuditLogsQuery,
   useGetAuditStatsQuery,
+  // Feature Management
+  useGetFeatureDefinitionsQuery,
+  useGetBusinessFeaturesQuery,
+  useUpdateBusinessFeaturesMutation,
+  // Data Clear
+  useGetDataTypesQuery,
+  useGetDataSummaryQuery,
+  useCheckClearDependenciesMutation,
+  useClearBusinessDataMutation,
 } = superadminApi;

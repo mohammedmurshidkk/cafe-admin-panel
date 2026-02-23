@@ -72,9 +72,11 @@ import {
 import { Outlet } from '@/types';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useFeatures } from '@/hooks/useFeatures';
 
 const CompanyProfile = () => {
   const { token, viewingBusiness } = useSelector((state: RootState) => state.auth);
+  const { isFeatureEnabled } = useFeatures();
   const { data, isLoading } = useGetBusinessProfileQuery();
   const [updateProfile, { isLoading: isSaving }] = useUpdateBusinessProfileMutation();
   const [uploadLogo, { isLoading: isUploadingLogo }] = useUploadBusinessLogoMutation();
@@ -975,23 +977,24 @@ const CompanyProfile = () => {
         />
       </div>
 
-      {/* Custom Cake Pricing */}
-      <div className="card-warm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
-              <Cake className="h-5 w-5 text-pink-500" />
+      {/* Custom Cake Pricing - Hidden when cake_pricing feature is disabled */}
+      {isFeatureEnabled('cake_pricing') && (
+        <div className="card-warm p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-pink-500/10 flex items-center justify-center">
+                <Cake className="h-5 w-5 text-pink-500" />
+              </div>
+              <div>
+                <h2 className="font-display font-semibold text-lg">Custom Cake Pricing</h2>
+                <p className="text-sm text-muted-foreground">AI-powered cake quote generation from images</p>
+              </div>
             </div>
-            <div>
-              <h2 className="font-display font-semibold text-lg">Custom Cake Pricing</h2>
-              <p className="text-sm text-muted-foreground">AI-powered cake quote generation from images</p>
-            </div>
-          </div>
-          <Switch
-            checked={cakePricingConfig?.enabled ?? false}
-            onCheckedChange={handleCakePricingToggle}
-            disabled={isCakePricingLoading}
-          />
+            <Switch
+              checked={cakePricingConfig?.enabled ?? false}
+              onCheckedChange={handleCakePricingToggle}
+              disabled={isCakePricingLoading}
+            />
         </div>
 
         {cakePricingConfig?.enabled && (
@@ -1208,7 +1211,8 @@ const CompanyProfile = () => {
             </Tabs>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Outlet Form Modal */}
       <FormModal

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useFeatures, FeatureKey } from '@/hooks/useFeatures';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -27,21 +29,28 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 
-const navItems = [
+interface NavItem {
+  path: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  feature?: FeatureKey;
+}
+
+const navItems: NavItem[] = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/orders', label: 'Orders', icon: ClipboardList },
   { path: '/chat', label: 'Chat', icon: MessagesSquare },
   { path: '/sessions', label: 'Sessions', icon: MessageSquare },
   { path: '/menu', label: 'Menu Items', icon: UtensilsCrossed },
   { path: '/categories', label: 'Categories', icon: FolderOpen },
-  { path: '/addons', label: 'Addons', icon: PlusCircle },
-  { path: '/amenities', label: 'Amenities', icon: Sparkles },
-  { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck },
+  { path: '/addons', label: 'Addons', icon: PlusCircle, feature: 'menu_addons' },
+  { path: '/amenities', label: 'Amenities', icon: Sparkles, feature: 'amenities' },
+  { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck, feature: 'delivery_management' },
   { path: '/company', label: 'Company Profile', icon: Building2 },
-  { path: '/campaigns', label: 'Campaigns', icon: Megaphone },
-  { path: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { path: '/customers', label: 'Customers', icon: Users },
-  { path: '/settings/ai', label: 'AI Settings', icon: Bot },
+  { path: '/campaigns', label: 'Campaigns', icon: Megaphone, feature: 'campaigns' },
+  { path: '/analytics', label: 'Analytics', icon: BarChart3, feature: 'analytics' },
+  { path: '/customers', label: 'Customers', icon: Users, feature: 'crm_customers' },
+  { path: '/settings/ai', label: 'AI Settings', icon: Bot, feature: 'ai_settings' },
 ];
 
 interface MobileSidebarProps {
@@ -52,6 +61,12 @@ interface MobileSidebarProps {
 export const MobileSidebar = ({ open, onClose }: MobileSidebarProps) => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { isFeatureEnabled } = useFeatures();
+
+  // Filter nav items based on enabled features
+  const visibleNavItems = useMemo(() => {
+    return navItems.filter(item => !item.feature || isFeatureEnabled(item.feature));
+  }, [isFeatureEnabled]);
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -66,7 +81,7 @@ export const MobileSidebar = ({ open, onClose }: MobileSidebarProps) => {
         </SheetHeader>
 
         <nav className="flex-1 py-4 px-2 space-y-1">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
 
