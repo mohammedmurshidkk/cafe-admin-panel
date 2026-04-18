@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { MenuImportModal } from '@/components/menu/MenuImportModal';
-import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload, Search, RefreshCw, FileText, ExternalLink, Settings, Star } from 'lucide-react';
+import { Plus, Pencil, Trash2, UtensilsCrossed, ImageIcon, X, Upload, Search, RefreshCw, FileText, ExternalLink, Settings, Star, Cloud, CloudOff, CheckCircle, AlertCircle } from 'lucide-react';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,14 @@ import { MenuItem, MenuItemFormData } from '@/types';
 import { formatCurrency } from '@/utils/formatters';
 import { toast } from 'sonner';
 import { FeaturedItemsModal } from '@/components/menu/FeaturedItemsModal';
+import {
+  useGetCatalogSettingsQuery,
+  useUpdateCatalogSettingsMutation,
+  useTestCatalogConnectionMutation,
+  useSyncToCatalogMutation,
+  useSyncItemToCatalogMutation,
+  useGetCatalogStatusQuery,
+} from '@/store/api/catalogApi';
 
 type PricingType = 'single' | 'sizes';
 type SizePrice = { name: string; price: number };
@@ -118,6 +126,27 @@ const Menu = () => {
   const [isFeaturedModalOpen, setIsFeaturedModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
+  // === Catalog State ===
+  const { data: catalogSettings } = useGetCatalogSettingsQuery();
+  const { data: catalogStatus } = useGetCatalogStatusQuery();
+  const [updateCatalogSettings] = useUpdateCatalogSettingsMutation();
+  const [testCatalogConnection, { isLoading: isTestingConnection }] = useTestCatalogConnectionMutation();
+  const [syncToCatalog, { isLoading: isSyncingCatalog }] = useSyncToCatalogMutation();
+  const [syncItemToCatalog] = useSyncItemToCatalogMutation();
+
+  const [isCatalogSettingsOpen, setIsCatalogSettingsOpen] = useState(false);
+  const [isCatalogSyncModalOpen, setIsCatalogSyncModalOpen] = useState(false);
+  const [catalogFormData, setCatalogFormData] = useState({ catalog_id: '', commerce_account_id: '', catalog_access_token: '' });
+  const [syncingItemId, setSyncingItemId] = useState<string | null>(null);
+  const [selectedSyncItems, setSelectedSyncItems] = useState<Set<string>>(new Set());
+  const [syncSearchQuery, setSyncSearchQuery] = useState('');
+  const [syncCategoryFilter, setSyncCategoryFilter] = useState<string>('all');
+
+  // Get sync status for a specific item
+  const getItemSyncStatus = (itemId: string) => {
+    return catalogStatus?.items?.find(s => s.item_id === itemId);
+  };
+
   // PDF Config Handlers
   const openPdfConfigModal = (config?: MenuPdfConfig) => {
     if (config) {
@@ -183,6 +212,117 @@ const Menu = () => {
         ? prev.categoryIds.filter(id => id !== categoryId)
         : [...prev.categoryIds, categoryId]
     }));
+  };
+
+  // === Catalog Handlers ===
+  const openCatalogSettings = () => {
+    setCatalogFormData({
+      catalog_id: catalogSettings?.catalog_id || '',
+      commerce_account_id: catalogSettings?.commerce_account_id || '',
+      catalog_access_token: '', // Don't pre-fill token for security
+    });
+    setIsCatalogSettingsOpen(true);
+  };
+
+  const handleSaveCatalogSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const updateData: { catalog_id: string | null; commerce_account_id: string | null; catalog_access_token?: string | null } = {
+        catalog_id: catalogFormData.catalog_id || null,
+        commerce_account_id: catalogFormData.commerce_account_id || null,
+      };
+
+      // Only include token if user entered a new one
+      if (catalogFormData.catalog_access_token) {
+        updateData.catalog_access_token = catalogFormData.catalog_access_token;
+      }
+
+      await updateCatalogSettings(updateData).unwrap();
+      toast.success('Catalog settings saved');
+      setIsCatalogSettingsOpen(false);
+    } catch {
+      toast.error('Failed to save catalog settings');
+    }
+  };
+
+  const handleTestConnection = async () => {
+    try {
+      const result = await testCatalogConnection().unwrap();
+      if (result.success) {
+        toast.success('Connection successful!');
+      } else {
+        toast.error(result.error || 'Connection failed');
+      }
+    } catch {
+      toast.error('Connection test failed');
+    }
+  };
+
+  const openCatalogSyncModal = () => {
+    setSelectedSyncItems(new Set());
+    setSyncSearchQuery('');
+    setSyncCategoryFilter('all');
+    setIsCatalogSyncModalOpen(true);
+  };
+
+  const handleSyncSelectedItems = async () => {
+    try {
+      const itemIds = selectedSyncItems.size > 0 ? Array.from(selectedSyncItems) : undefined;
+      const result = await syncToCatalog({ itemIds }).unwrap();
+      if (result.success) {
+        toast.success(`Synced ${result.synced_count} items to catalog`);
+        setIsCatalogSyncModalOpen(false);
+      } else {
+        toast.error(`Sync completed with ${result.failed_count} failures`);
+      }
+    } catch {
+      toast.error('Failed to sync catalog');
+    }
+  };
+
+  const toggleSyncItem = (itemId: string) => {
+    setSelectedSyncItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemId)) {
+        newSet.delete(itemId);
+      } else {
+        newSet.add(itemId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllSyncItems = (items: typeof filteredItems) => {
+    setSelectedSyncItems(new Set(items.map(i => i.id)));
+  };
+
+  const selectSyncItemsByCategory = (categoryId: string) => {
+    const categoryItems = menuData?.items?.filter(i => i.category_id === categoryId) || [];
+    setSelectedSyncItems(new Set(categoryItems.map(i => i.id)));
+  };
+
+  // Filter items for sync modal
+  const syncFilteredItems = menuData?.items?.filter(item => {
+    const matchesSearch = !syncSearchQuery ||
+      item.name.toLowerCase().includes(syncSearchQuery.toLowerCase());
+    const matchesCategory = syncCategoryFilter === 'all' || item.category_id === syncCategoryFilter;
+    return matchesSearch && matchesCategory;
+  }) || [];
+
+  const handleSyncItem = async (itemId: string) => {
+    setSyncingItemId(itemId);
+    try {
+      const result = await syncItemToCatalog(itemId).unwrap();
+      if (result.success) {
+        toast.success('Item synced to catalog');
+      } else {
+        toast.error(result.error || 'Failed to sync item');
+      }
+    } catch {
+      toast.error('Failed to sync item');
+    } finally {
+      setSyncingItemId(null);
+    }
   };
 
   const openForm = (item?: MenuItem) => {
@@ -369,6 +509,19 @@ const Menu = () => {
               <FileText className="h-4 w-4 mr-2" />
               PDF Menus
             </Button>
+            <Button
+              variant="outline"
+              onClick={openCatalogSyncModal}
+              disabled={!catalogSettings?.catalog_id}
+              title={!catalogSettings?.catalog_id ? 'Configure catalog settings first' : 'Sync items to WhatsApp Catalog'}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Sync Catalog
+            </Button>
+            <Button variant="outline" onClick={openCatalogSettings}>
+              <Cloud className="h-4 w-4 mr-2" />
+              Catalog Settings
+            </Button>
             <Button variant="gradient" onClick={() => openForm()}>
               <Plus className="h-4 w-4 mr-2" />
               Add Item
@@ -457,6 +610,30 @@ const Menu = () => {
                     </span>
                   </div>
                   <div className="flex gap-1">
+                    {/* Catalog sync button */}
+                    {catalogSettings?.catalog_id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleSyncItem(item.id)}
+                        disabled={syncingItemId === item.id}
+                        title={
+                          getItemSyncStatus(item.id)?.sync_status === 'synced'
+                            ? 'Synced to catalog'
+                            : 'Sync to catalog'
+                        }
+                      >
+                        {syncingItemId === item.id ? (
+                          <RefreshCw className="h-4 w-4 animate-spin text-primary" />
+                        ) : getItemSyncStatus(item.id)?.sync_status === 'synced' ? (
+                          <CheckCircle className="h-4 w-4 text-green-500" />
+                        ) : getItemSyncStatus(item.id)?.sync_status === 'failed' ? (
+                          <AlertCircle className="h-4 w-4 text-red-500" />
+                        ) : (
+                          <CloudOff className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -908,6 +1085,236 @@ const Menu = () => {
         open={isImportModalOpen}
         onOpenChange={setIsImportModalOpen}
       />
+
+      {/* Catalog Settings Modal */}
+      <FormModal
+        open={isCatalogSettingsOpen}
+        onOpenChange={setIsCatalogSettingsOpen}
+        title="WhatsApp Catalog Settings"
+      >
+        <form onSubmit={handleSaveCatalogSettings} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="catalogId">Meta Catalog ID</Label>
+            <Input
+              id="catalogId"
+              placeholder="Enter your Meta Commerce Catalog ID"
+              value={catalogFormData.catalog_id}
+              onChange={(e) => setCatalogFormData(prev => ({ ...prev, catalog_id: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Find this in Meta Business Suite &gt; Commerce Manager &gt; Catalog
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="commerceAccountId">Commerce Account ID (Optional)</Label>
+            <Input
+              id="commerceAccountId"
+              placeholder="Enter your Commerce Account ID"
+              value={catalogFormData.commerce_account_id}
+              onChange={(e) => setCatalogFormData(prev => ({ ...prev, commerce_account_id: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="catalogAccessToken">
+              Catalog Access Token
+              {catalogSettings?.has_catalog_access_token && (
+                <Badge variant="outline" className="ml-2 text-xs">Configured</Badge>
+              )}
+            </Label>
+            <Input
+              id="catalogAccessToken"
+              type="password"
+              placeholder={catalogSettings?.has_catalog_access_token ? 'Enter new token to update' : 'Enter your catalog access token'}
+              value={catalogFormData.catalog_access_token}
+              onChange={(e) => setCatalogFormData(prev => ({ ...prev, catalog_access_token: e.target.value }))}
+            />
+            <p className="text-xs text-muted-foreground">
+              Required for catalog sync. Get from Meta Business Settings &gt; System Users &gt; Generate Token with catalog_management permission.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleTestConnection}
+              disabled={isTestingConnection || !catalogFormData.catalog_id}
+            >
+              {isTestingConnection ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Testing...
+                </>
+              ) : (
+                <>
+                  <Cloud className="h-4 w-4 mr-2" />
+                  Test Connection
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button type="button" variant="outline" onClick={() => setIsCatalogSettingsOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="gradient">
+              Save Settings
+            </Button>
+          </div>
+        </form>
+      </FormModal>
+
+      {/* Catalog Sync Modal */}
+      <FormModal
+        open={isCatalogSyncModalOpen}
+        onOpenChange={setIsCatalogSyncModalOpen}
+        title="Sync to WhatsApp Catalog"
+        className="max-w-3xl"
+      >
+        <div className="space-y-4">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search items..."
+                value={syncSearchQuery}
+                onChange={(e) => setSyncSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={syncCategoryFilter} onValueChange={setSyncCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categoriesData?.categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => selectAllSyncItems(syncFilteredItems)}
+            >
+              Select All ({syncFilteredItems.length})
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedSyncItems(new Set())}
+            >
+              Clear Selection
+            </Button>
+            {syncCategoryFilter !== 'all' && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => selectSyncItemsByCategory(syncCategoryFilter)}
+              >
+                Select Category
+              </Button>
+            )}
+          </div>
+
+          {/* Item List */}
+          <div className="border rounded-lg max-h-80 overflow-y-auto">
+            {syncFilteredItems.length > 0 ? (
+              <div className="divide-y">
+                {syncFilteredItems.map((item) => {
+                  const syncStatus = getItemSyncStatus(item.id);
+                  return (
+                    <label
+                      key={item.id}
+                      className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={selectedSyncItems.has(item.id)}
+                        onCheckedChange={() => toggleSyncItem(item.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{item.name}</div>
+                        <div className="text-xs text-muted-foreground">{item.category_name}</div>
+                      </div>
+                      {syncStatus?.sync_status === 'synced' && (
+                        <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Synced
+                        </Badge>
+                      )}
+                      {syncStatus?.sync_status === 'failed' && (
+                        <Badge variant="outline" className="text-red-600 border-red-600 text-xs">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Failed
+                        </Badge>
+                      )}
+                      {(!syncStatus || syncStatus.sync_status === 'not_synced') && (
+                        <Badge variant="outline" className="text-muted-foreground text-xs">
+                          <CloudOff className="h-3 w-3 mr-1" />
+                          Not synced
+                        </Badge>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center text-muted-foreground">
+                No items found
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              {selectedSyncItems.size > 0
+                ? `${selectedSyncItems.size} item(s) selected`
+                : 'Select items to sync or sync all'}
+            </p>
+            <div className="flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsCatalogSyncModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="gradient"
+                onClick={handleSyncSelectedItems}
+                disabled={isSyncingCatalog}
+              >
+                {isSyncingCatalog ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Syncing...
+                  </>
+                ) : (
+                  <>
+                    <Cloud className="h-4 w-4 mr-2" />
+                    {selectedSyncItems.size > 0 ? `Sync ${selectedSyncItems.size} Items` : 'Sync All Items'}
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </FormModal>
     </div>
   );
 };

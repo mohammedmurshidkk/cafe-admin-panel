@@ -3,7 +3,6 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { SessionList } from '@/components/chat/SessionList';
 import { ChatView } from '@/components/chat/ChatView';
 import { useChatWebSocket } from '@/hooks/useChatWebSocket';
-import { MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const LAST_CHAT_SESSION_KEY = 'lastChatSessionId';
@@ -62,10 +61,10 @@ const AdminChat = () => {
           className="flex-1"
         />
       ) : (
-        <div className="hidden md:flex flex-1 items-center justify-center bg-muted/30">
-          <div className="text-center text-muted-foreground">
-            <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-50" />
-            <h3 className="text-lg font-medium mb-1">Select a conversation</h3>
+        <div className="hidden md:flex flex-1 items-center justify-center bg-surface-container-low">
+          <div className="text-center text-on-surface-variant">
+            <span className="material-symbols-outlined text-[64px] opacity-25 block mb-4">chat</span>
+            <h3 className="text-base font-semibold text-on-surface mb-1">Select a conversation</h3>
             <p className="text-sm">Choose a session from the left to start chatting</p>
           </div>
         </div>

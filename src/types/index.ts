@@ -1,3 +1,9 @@
+// Plugin IDs
+export enum PluginId {
+  CAKE_CAFE = 'cake-cafe',
+  MARRIAGE_MATCHING = 'marriage-matching',
+}
+
 // Auth types
 export type UserRole = 'admin' | 'superadmin';
 
@@ -7,6 +13,7 @@ export interface User {
   business_id?: string;
   business_name?: string;
   role: UserRole;
+  plugin_id?: string;
 }
 
 export interface LoginRequest {
@@ -179,6 +186,10 @@ export interface MenuItem {
   featured_order?: number;
   special_notes?: string;
   price?: number;
+  // Catalog sync fields
+  retailer_id?: string | null;
+  catalog_synced_at?: string | null;
+  catalog_sync_status?: 'not_synced' | 'pending' | 'synced' | 'failed';
 }
 
 export interface MenuItemFormData {
@@ -634,4 +645,79 @@ export interface DataSummaryResponse {
 
 export interface DataTypesResponse {
   dataTypes: DataType[];
+}
+
+// Marriage Matching Plugin Types
+
+export interface MarriageProfile {
+  id: string;
+  business_id: string;
+  profile_code: string;
+  name: string;
+  gender: 'male' | 'female';
+  age?: number;
+  height?: string;
+  weight?: string;
+  skin_tone?: string;
+  religion?: string;
+  religion_sect?: string;
+  location_district?: string;
+  location_city?: string;
+  location_country?: string;
+  education?: string;
+  profession?: string;
+  income_range?: string;
+  marital_status?: string;
+  has_children?: boolean;
+  children_count?: number;
+  languages?: string[];
+  description?: string;
+  photo_url?: string;
+  preferred_age_min?: number;
+  preferred_age_max?: number;
+  preferred_location?: string;
+  preferred_religion?: string;
+  preferred_sect?: string;
+  distance_restriction?: string;
+  other_demands?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface MarriageSeeker {
+  id: string;
+  business_id: string;
+  phone: string;
+  name?: string;
+  registered_at: string;
+  profile_submitted: boolean;
+  age?: number;
+  gender?: string;
+  religion?: string;
+  religion_sect?: string;
+  location_city?: string;
+  location_country?: string;
+  profession?: string;
+  education?: string;
+  description?: string;
+  is_blocked: boolean;
+}
+
+export interface InterestRequest {
+  id: string;
+  business_id: string;
+  seeker_id: string;
+  profile_id: string;
+  status: 'pending' | 'contacted' | 'closed';
+  admin_note?: string;
+  created_at: string;
+  updated_at: string;
+  seeker?: MarriageSeeker;
+  profile?: MarriageProfile;
+}
+
+export interface MarriageDashboardStats {
+  total_active_profiles: number;
+  new_profiles_this_week: number;
+  pending_interest_requests: number;
 }

@@ -13,6 +13,7 @@ import Menu from './pages/Menu';
 import Categories from './pages/Categories';
 import Addons from './pages/Addons';
 import CompanyProfile from './pages/CompanyProfile';
+import SettingsPage from './pages/settings/Settings';
 import Amenities from './pages/Amenities';
 import DeliveryBoys from './pages/DeliveryBoys';
 import Notifications from './pages/Notifications';
@@ -32,6 +33,10 @@ import Analytics from "./pages/Analytics";
 import Customers from "./pages/Customers";
 import AiSettings from "./pages/AiSettings";
 import { FeatureGate } from "./components/FeatureGate";
+import MarriageProfiles from './pages/marriage/MarriageProfiles';
+import MarriageProfileForm from './pages/marriage/MarriageProfileForm';
+import MarriageSeekers from './pages/marriage/MarriageSeekers';
+import MarriageInterests from './pages/marriage/MarriageInterests';
 
 const App = () => (
   <Provider store={store}>
@@ -59,7 +64,8 @@ const App = () => (
             <Route path="/menu" element={<Menu />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/addons" element={<FeatureGate feature="menu_addons"><Addons /></FeatureGate>} />
-            <Route path="/company" element={<CompanyProfile />} />
+            {/* <Route path="/company" element={<CompanyProfile />} /> */}
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="/amenities" element={<FeatureGate feature="amenities"><Amenities /></FeatureGate>} />
             <Route path="/delivery-boys" element={<FeatureGate feature="delivery_management"><DeliveryBoys /></FeatureGate>} />
             <Route path="/notifications" element={<FeatureGate feature="notifications"><Notifications /></FeatureGate>} />
@@ -69,6 +75,12 @@ const App = () => (
             <Route path="/analytics" element={<FeatureGate feature="analytics"><Analytics /></FeatureGate>} />
             <Route path="/customers" element={<FeatureGate feature="crm_customers"><Customers /></FeatureGate>} />
             <Route path="/settings/ai" element={<FeatureGate feature="ai_settings"><AiSettings /></FeatureGate>} />
+            {/* Marriage Matching Plugin routes */}
+            <Route path="/marriage/profiles" element={<MarriageProfiles />} />
+            <Route path="/marriage/profiles/new" element={<MarriageProfileForm />} />
+            <Route path="/marriage/profiles/:id/edit" element={<MarriageProfileForm />} />
+            <Route path="/marriage/seekers" element={<MarriageSeekers />} />
+            <Route path="/marriage/interests" element={<MarriageInterests />} />
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />

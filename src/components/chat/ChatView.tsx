@@ -356,18 +356,18 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
 
   if ((isLoading || isFetching) && currentPage === 1 && allMessages.length === 0) {
     return (
-      <div className={cn('flex flex-col h-full bg-background', className)}>
-        <div className="p-4 border-b border-border flex items-center gap-3">
-          <Skeleton className="w-10 h-10 rounded-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-24" />
+      <div className={cn('flex flex-col h-full bg-white', className)}>
+        <div className="p-4 border-b border-outline-variant/40 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-surface-container-highest animate-pulse flex-shrink-0" />
+          <div className="space-y-2 flex-1">
+            <div className="h-4 w-32 bg-surface-container-highest rounded animate-pulse" />
+            <div className="h-3 w-24 bg-surface-container-high rounded animate-pulse" />
           </div>
         </div>
-        <div className="flex-1 p-4 space-y-4">
+        <div className="flex-1 p-4 space-y-4 bg-surface-container-low">
           {[1, 2, 3].map((i) => (
             <div key={i} className={i % 2 === 0 ? 'flex justify-end' : ''}>
-              <Skeleton className="h-16 w-48 rounded-2xl" />
+              <div className="h-16 w-48 rounded-2xl bg-surface-container-highest animate-pulse" />
             </div>
           ))}
         </div>
@@ -376,9 +376,9 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
   }
 
   return (
-    <div className={cn('flex flex-col h-full bg-background overflow-hidden', className)}>
+    <div className={cn('flex flex-col h-full bg-white overflow-hidden', className)}>
       {/* Header - Fixed */}
-      <div className="flex-shrink-0 p-3 border-b border-border flex items-center gap-3 bg-card">
+      <div className="flex-shrink-0 px-4 py-3 border-b border-outline-variant/40 flex items-center gap-3 bg-white">
         {onBack && (
           <Button
             variant="ghost"
@@ -390,13 +390,13 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
           </Button>
         )}
 
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium flex-shrink-0">
+        <div className="w-10 h-10 rounded-full bg-blush flex items-center justify-center text-brand-primary font-bold text-sm flex-shrink-0">
           {displayName.charAt(0).toUpperCase()}
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium truncate">{displayName}</h3>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
+          <h3 className="font-semibold text-on-surface truncate">{displayName}</h3>
+          <p className="text-xs text-on-surface-variant flex items-center gap-1">
             <Phone className="h-3 w-3" />
             {formatPhone(customer?.phone)}
           </p>
@@ -441,7 +441,7 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
 
         {/* Peek Mode Indicator */}
         {isPeekMode && (
-          <div className="absolute top-12 left-0 right-0 bg-yellow-100/90 dark:bg-yellow-900/90 text-yellow-800 dark:text-yellow-200 text-xs px-2 py-1 flex items-center justify-center gap-1.5 backdrop-blur-sm z-10 font-medium">
+          <div className="absolute top-12 left-0 right-0 bg-amber-50 text-amber-700 text-xs px-2 py-1 flex items-center justify-center gap-1.5 z-10 font-medium border-b border-amber-200">
             <Eye className="h-3 w-3" />
             Peek Mode - Messages not marked as read
           </div>
@@ -450,7 +450,7 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
 
       {/* Selection Toolbar */}
       {isSelectionMode && (
-        <div className="flex-shrink-0 px-4 py-2 bg-primary/5 border-b border-border flex items-center justify-between">
+        <div className="flex-shrink-0 px-4 py-2 bg-blush border-b border-outline-variant/40 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -461,7 +461,7 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
               <X className="h-4 w-4" />
               Cancel
             </Button>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-on-surface-variant">
               {selectedMessageIds.size} selected
             </span>
           </div>
@@ -480,7 +480,7 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
       {/* Messages - Scrollable */}
       <div
         ref={messagesContainerRef}
-        className="flex-1 min-h-0 overflow-y-auto p-4 bg-muted/30 scroll-smooth relative"
+        className="flex-1 min-h-0 overflow-y-auto p-4 bg-surface-container-low scroll-smooth relative"
       >
         {/* Loading spinner for older messages */}
         <div ref={loadMoreTriggerRef} className="py-2 flex justify-center w-full">
@@ -490,7 +490,7 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
         </div>
 
         {allMessages.length === 0 && !isLoading ? (
-          <div className="h-full flex items-center justify-center text-muted-foreground">
+          <div className="h-full flex items-center justify-center text-on-surface-variant">
             <p>No messages yet</p>
           </div>
         ) : (
@@ -513,8 +513,8 @@ export const ChatView = ({ sessionId, onBack, onClose, isPeekMode, className }: 
 
       {/* Intervention Card */}
       {pendingIntervention && !quoteDismissed && (
-        <div className="flex-shrink-0 border-t border-border">
-          <div className="bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-pink-500/10 border-b border-purple-200/50 dark:border-purple-800/50">
+        <div className="flex-shrink-0 border-t border-outline-variant/40">
+          <div className="bg-blush/60 border-b border-outline-variant/40">
             {(() => {
               switch (pendingIntervention.type) {
                 case 'out_of_radius':

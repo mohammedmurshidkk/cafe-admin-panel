@@ -208,7 +208,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ sessionI
   const isDisabled = disabled || isSending || isUploading;
 
   return (
-    <div className="border-t border-border bg-card p-3">
+    <div className="border-t border-outline-variant/40 bg-white p-3">
       <input
         ref={fileInputRef}
         type="file"
@@ -227,13 +227,13 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({ sessionI
             />
           )}
           {pendingMedia.type === 'video' && (
-            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 bg-surface-container-low rounded-lg px-3 py-2">
               <Video className="h-5 w-5" />
               <span className="text-sm">{pendingMedia.file.name}</span>
             </div>
           )}
           {pendingMedia.type === 'document' && (
-            <div className="flex items-center gap-2 bg-muted rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 bg-surface-container-low rounded-lg px-3 py-2">
               <FileText className="h-5 w-5" />
               <span className="text-sm">{pendingMedia.file.name}</span>
             </div>

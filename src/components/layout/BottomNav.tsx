@@ -25,16 +25,22 @@ import {
   Megaphone,
   BarChart3,
   Users,
-  Bot
+  Bot,
+  Heart,
+  UserSearch,
+  Bell,
+  Settings,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFeatures, FeatureKey } from '@/hooks/useFeatures';
+import { PluginId } from '@/types';
 
 interface NavItem {
   path: string;
   label: string;
   icon: typeof LayoutDashboard;
   feature?: FeatureKey;
+  plugin?: string;
 }
 
 const mainNavItems: NavItem[] = [
@@ -42,37 +48,60 @@ const mainNavItems: NavItem[] = [
   { path: '/orders', label: 'Orders', icon: ClipboardList },
   { path: '/chat', label: 'Chat', icon: MessagesSquare },
   { path: '/menu', label: 'Menu', icon: UtensilsCrossed },
+  // Marriage main nav
+  { path: '/marriage/profiles', label: 'Profiles', icon: Heart, plugin: PluginId.MARRIAGE_MATCHING },
 ];
 
 const moreNavItems: NavItem[] = [
-  { path: '/sessions', label: 'Sessions', icon: MessageSquare },
+  // { path: '/sessions', label: 'Sessions', icon: MessageSquare },
   { path: '/categories', label: 'Categories', icon: FolderOpen },
   { path: '/addons', label: 'Addons', icon: PlusCircle, feature: 'menu_addons' },
   { path: '/amenities', label: 'Amenities', icon: Sparkles, feature: 'amenities' },
   { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck, feature: 'delivery_management' },
-  { path: '/company', label: 'Company Profile', icon: Building2 },
+  // { path: '/company', label: 'Company Profile', icon: Building2 },
   { path: '/campaigns', label: 'Campaigns', icon: Megaphone, feature: 'campaigns' },
   { path: '/analytics', label: 'Analytics', icon: BarChart3, feature: 'analytics' },
   { path: '/customers', label: 'Customers', icon: Users, feature: 'crm_customers' },
   { path: '/settings/ai', label: 'AI Settings', icon: Bot, feature: 'ai_settings' },
+  { path: '/settings', label: 'Settings', icon: Settings },
+  // Marriage more nav
+  { path: '/marriage/seekers', label: 'Seekers', icon: UserSearch, plugin: PluginId.MARRIAGE_MATCHING },
+  { path: '/marriage/interests', label: 'Interest Requests', icon: Bell, plugin: PluginId.MARRIAGE_MATCHING },
 ];
 
 export const BottomNav = () => {
   const location = useLocation();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const { isFeatureEnabled } = useFeatures();
 
-  // Filter more items based on enabled features
+  console.log('######## user', user)
+
+  const pluginId = (user?.plugin_id ?? PluginId.CAKE_CAFE) as PluginId;
+  const orderingOnlyPaths = ['/orders', '/menu', '/categories', '/addons', '/amenities', '/delivery-boys'];
+
+  const visibleMainItems = useMemo(() => {
+    return mainNavItems.filter(item => {
+      if (item.plugin && item.plugin !== pluginId) return false;
+      if (!item.plugin && pluginId === PluginId.MARRIAGE_MATCHING && orderingOnlyPaths.includes(item.path)) return false;
+      return true;
+    });
+  }, [pluginId]);
+
+  // Filter more items based on enabled features and plugin
   const visibleMoreItems = useMemo(() => {
-    return moreNavItems.filter(item => !item.feature || isFeatureEnabled(item.feature));
-  }, [isFeatureEnabled]);
+    return moreNavItems.filter(item => {
+      if (item.plugin && item.plugin !== pluginId) return false;
+      if (!item.plugin && pluginId === PluginId.MARRIAGE_MATCHING && orderingOnlyPaths.includes(item.path)) return false;
+      return !item.feature || isFeatureEnabled(item.feature);
+    });
+  }, [isFeatureEnabled, pluginId]);
 
   const isMoreActive = visibleMoreItems.some(item => location.pathname === item.path);
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-elevated z-50">
       <div className="flex items-center justify-around h-16 px-2">
-        {mainNavItems.map((item) => {
+        {visibleMainItems.map((item) => {
           // For chat, restore last active session if available
           const isChatItem = item.path === '/chat';
           const isOnChatSession = location.pathname.startsWith('/chat/');

@@ -46,7 +46,7 @@ const navItems: NavItem[] = [
   { path: '/addons', label: 'Addons', icon: PlusCircle, feature: 'menu_addons' },
   { path: '/amenities', label: 'Amenities', icon: Sparkles, feature: 'amenities' },
   { path: '/delivery-boys', label: 'Delivery Boys', icon: Truck, feature: 'delivery_management' },
-  { path: '/company', label: 'Company Profile', icon: Building2 },
+  // { path: '/company', label: 'Company Profile', icon: Building2 },
   { path: '/campaigns', label: 'Campaigns', icon: Megaphone, feature: 'campaigns' },
   { path: '/analytics', label: 'Analytics', icon: BarChart3, feature: 'analytics' },
   { path: '/customers', label: 'Customers', icon: Users, feature: 'crm_customers' },

@@ -74,7 +74,7 @@ export const MessageBubble = ({
         'flex mb-2 group relative',
         isSentMessage ? 'justify-end' : 'justify-start',
         isSelectionMode && 'cursor-pointer',
-        isSelected && 'bg-primary/10 -mx-4 px-4 py-1 rounded-lg'
+        isSelected && 'bg-blush -mx-4 px-4 py-1 rounded-lg'
       )}
       onClick={handleClick}
       onContextMenu={(e) => {
@@ -91,10 +91,10 @@ export const MessageBubble = ({
           <div className={cn(
             'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors',
             isSelected
-              ? 'bg-primary border-primary'
-              : 'border-muted-foreground/50'
+              ? 'bg-primary-container border-primary-container'
+              : 'border-on-surface/30'
           )}>
-            {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+            {isSelected && <Check className="h-3 w-3 text-white" />}
           </div>
         </div>
       )}
@@ -103,17 +103,17 @@ export const MessageBubble = ({
         className={cn(
           'max-w-[75%] rounded-2xl px-4 py-2 relative',
           isOutgoing
-            ? 'bg-gradient-to-br from-violet-500 to-purple-600 text-white rounded-br-md'
+            ? 'bg-primary-container text-white rounded-br-sm'
             : isOutbound
-              ? 'bg-primary text-primary-foreground rounded-br-md'
-              : 'bg-white dark:bg-zinc-800 shadow-sm border border-border/50 rounded-bl-md text-foreground'
+              ? 'bg-brand-primary text-white rounded-br-sm'
+              : 'bg-surface-container border border-on-surface/10 rounded-bl-sm text-on-surface'
         )}
       >
         {/* Forwarded label */}
         {isForwarded && (
           <div className={cn(
             'flex items-center gap-1 mb-1 text-[10px] italic',
-            isSentMessage ? 'text-white/70' : 'text-muted-foreground'
+            isSentMessage ? 'text-white/70' : 'text-on-surface-variant'
           )}>
             <Forward className="h-3 w-3" />
             <span>Forwarded</span>
@@ -124,7 +124,7 @@ export const MessageBubble = ({
         {isOutgoing && !isForwarded && (
           <div className="flex items-center gap-1 mb-1">
             <Sparkles className="h-3 w-3 text-yellow-300" />
-            <span className="text-[10px] font-medium text-white/90">AI Assistant</span>
+            <span className="text-[10px] font-medium text-white/80">AI Assistant</span>
           </div>
         )}
 
@@ -153,8 +153,8 @@ export const MessageBubble = ({
               isOutgoing
                 ? 'text-white/70'
                 : isSentMessage
-                  ? 'text-primary-foreground/70'
-                  : 'text-muted-foreground'
+                  ? 'text-white/70'
+                  : 'text-on-surface-variant'
             )}
           >
             {time}
@@ -172,12 +172,12 @@ export const MessageBubble = ({
           }}
           className={cn(
             'absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity',
-            'p-1.5 rounded-full bg-muted hover:bg-muted/80',
+            'p-1.5 rounded-full bg-surface-container-low hover:bg-surface-container',
             isSentMessage ? 'left-0 -translate-x-full mr-2' : 'right-0 translate-x-full ml-2'
           )}
           title="Forward message"
         >
-          <Forward className="h-4 w-4 text-muted-foreground" />
+          <Forward className="h-4 w-4 text-on-surface-variant" />
         </button>
       )}
     </div>
