@@ -959,7 +959,7 @@ const Settings = () => {
                       </button>
                     </div>
                     <div className="space-y-2">
-                      {weightPricing.map((w) => (
+                      {/* {weightPricing?.map((w) => (
                         <div key={w.id} className="flex items-center justify-between px-4 py-3 bg-surface-container-low rounded-xl">
                           <span className="text-sm text-on-surface">{w.weight_grams}g</span>
                           <div className="flex items-center gap-3">
@@ -968,7 +968,7 @@ const Settings = () => {
                             <button onClick={() => setDeleteWeightItem(w)} className="p-1 rounded hover:bg-error-container text-on-surface-variant hover:text-on-error-container"><Trash2 className="h-3.5 w-3.5" /></button>
                           </div>
                         </div>
-                      ))}
+                      ))} */}
                       {!weightPricing.length && <p className="text-xs text-on-surface-variant text-center py-4">No weights added yet</p>}
                     </div>
                   </div>
